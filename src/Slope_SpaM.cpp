@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <map>
 #include <math.h>
+#include "args.hpp"
 
 
 // berechnet kmax, das pattern weight
@@ -28,36 +29,30 @@ int char_count (std::string pattern){
 }
 
 
-// Das Eigentliche Programm
 int main (int argc, char** argv){
-	// Abrage alle nötigen Eingaben
-	// Eingabe der Fasta-Datei der Sequenzen
-	std::string filename;
-	std::string yn;
-	do {
-		std::cout << "Please enter the name of the Fasta file containing the sequences you want to compare." << '\n';
-		std::cin >> filename;
-		std::cout << "You entered " << filename << " as the filename. Is that correct? (y/n)" << '\n';
-		std::cin >> yn;
-	} while( yn == "n" );
-	// Eingabe des Patterns
-	std::string pattern;
-	do {
-		std::cout << "Please enter the pattern, consisting of ones, for match positions, and zeroes, for do not care positions." << '\n';
-		std::cin >> pattern;
-		std::cout << "You entered " << pattern << " as pattern. Is that correct? (y/n)" << '\n';
-		std::cin >> yn;
-	} while( yn == "n" );
-	// Eingabe des Names für die Output Datei
-	std::string outfile;
-	do {
-		std::cout << "Please enter a name for your output file, which will contain the distance matrix."<< '\n';
-	std::cin >> outfile;
-	std::cout << "You entered " << outfile << " as name for the output file. Is that correct? (y/n)" << '\n';
-		std::cin >> yn;
-	} while( yn == "n" );	
+	args::ArgumentParser parser("Slope-SpaM");
+	args::ValueFlag<std::string> infile(parser, "Input file", "Specify input file name", {'i', "input"}, args::Options::Required);
+	args::ValueFlag<std::string> outfile(parser, "Output file", "Specify output file name", {'o', "output"}, "out.dmat");
+	args::ValueFlag<std::string> pattern_flag(parser, "Pattern", "Use this pattern if specified", {'p', "pattern"}, "111111111111111111111111111111111111");
+	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+	try
+    {
+        parser.ParseCLI(argc, argv);
+    }
+    catch (args::Help)
+    {
+        std::cout << parser;
+        return 0;
+    }
+    catch (args::Error e)
+    {
+        std::cerr << e.what() << std::endl;
+        std::cerr << parser;
+        return 1;
+    }
+
 	//Einlesen der Sequenzen aus der Fasta-Datei in zwei Vektoren
-	std::ifstream file (filename);
+	std::ifstream file (infile.Get());
 	std::vector <std::string> SeqKeys; // Vektor für die Namen der Sequenzen
 	std::vector <std::string> Seqs; // Vektor für die Sequenzen als ein String
 	std::string SeqK;
@@ -89,6 +84,7 @@ int main (int argc, char** argv){
 		Lens.emplace_back(len);
 	}
 	// Verarbeiten des Patterns
+	std::string pattern = pattern_flag.Get();
 	int lenPat = pattern.length();  // Länge des Pattern
 	int kmax; // pattern weight, Anzahl der Matchpositionen im Pattern
 	kmax = char_count(pattern);
@@ -100,7 +96,7 @@ int main (int argc, char** argv){
 	}
 	int SeqZahl = Lens.size();	// Anzahl der Sequenzen	
 	// Erstellen der Outputdatei und eintragen der Anzahl der Sequenzen
-	std::ofstream f (outfile);
+	std::ofstream f (outfile.Get());
 	f << SeqZahl << '\n';
 	f.close();
 	double distance [SeqZahl] [SeqZahl] = {0.00000};
@@ -286,14 +282,14 @@ int main (int argc, char** argv){
 		m = Zaehler/Nenner;
 		double p = exp(m);
 		double d = -(3.0/4.0) * log(1 - (4.0/3.0) * (1-p));
-		std::cout  << "match probability p : " << p << "Jukes-Cantor distance d : " << d <<'\n' ;
+		std::cout  << "match probability p : " << p << " Jukes-Cantor distance d : " << d <<'\n' ;
 		distance [i][j] = d;
 		distance [j][i] = d; 
 		wordlist2.clear();
 		wordlistges.clear();
 }
 }
-	std::ofstream ff (outfile, std::ios::app);
+	std::ofstream ff (outfile.Get(), std::ios::app);
 	for (int i=0; i<SeqZahl; i++){
 		ff << SeqKeys [i] << '\t';
 		for (int k=0; k<SeqZahl; k++){
