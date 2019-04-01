@@ -130,8 +130,8 @@ std::pair<float, float> calculate_distance(std::vector<size_t> & matches, size_t
 	double Zaehler = 0;
 	double Nenner = 0;
 	for (int i=0; i<werte.size(); i++){
-		Zaehler = Zaehler + (werte[i].first-x_mean)*(werte[i].second-y_mean);
-		Nenner = Nenner + (werte[i].first-x_mean)*(werte[i].first-x_mean);
+		Zaehler += (werte[i].first-x_mean)*(werte[i].second-y_mean);
+		Nenner += (werte[i].first-x_mean)*(werte[i].first-x_mean);
 	}
 	m = Zaehler/Nenner;
 	double p = exp(m);
@@ -142,11 +142,13 @@ std::pair<float, float> calculate_distance(std::vector<size_t> & matches, size_t
 std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::string> & Seqs, std::string & pattern, std::vector<size_t> & Lens, size_t kmax)
 {
 	std::vector<std::vector<double>> distance(Seqs.size(), std::vector<double>(Seqs.size(), 0));
-	for (int i=0; i<Seqs.size()-1; i++){
+	for (int i=0; i<Seqs.size()-1; i++)
+	{
 		std::cout<<"sequence number : "<<i<<'\n';
 		std::vector <std::vector<int>> wordlist1;
 		create_spaced_words(wordlist1, pattern, Seqs, i, Lens[i]);
-		for (int j=i+1; j<Seqs.size(); j++){
+		for (int j=i+1; j<Seqs.size(); j++)
+		{
 			std::vector <std::vector<int>> wordlistges(wordlist1.begin(), wordlist1.end());
 			create_spaced_words(wordlistges, pattern, Seqs, j, Lens[j]);
 			std::sort(wordlistges.begin(), wordlistges.end()); 
