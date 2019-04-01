@@ -154,13 +154,7 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 			std::vector <std::vector<int>> wordlistges(wordlist1.begin(), wordlist1.end());
 			create_spaced_words(wordlistges, pattern, Seqs, j, Lens[j]);
 			std::sort(wordlistges.begin(), wordlistges.end()); 
-			int Lmax;
-			if (Lens[i]>Lens[j]){
-				Lmax = Lens[i];
-			}
-			else {
-				Lmax=Lens[j];
-			}
+			int Lmax = std::max(Lens[i], Lens[j]);
 			int kmin =  log (2 * Lmax ) / 0.87 + 1;
 			std::map <int, int> matchZahl;
 			int matche [kmax-kmin][2]={0};
@@ -191,11 +185,8 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 								int match = v[0]*v[1];
 								matche [k-kmin][0] = k+1;
 								matche [k-kmin][1] = matche [k-kmin][1] + match;
-								matchZahl.clear();	
 							}
-							else{
-								matchZahl.clear();
-							}
+							matchZahl.clear();
 						}
 					}
 					if (z==wordlistges.size()-1){//ggf leztes Match eintragen
@@ -207,11 +198,8 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 							int match = v[0]*v[1];
 							matche [k-kmin][0] = k+1;
 							matche [k-kmin][1] = matche [k-kmin][1] + match;
-							matchZahl.clear();	
 						}
-						else{
-							matchZahl.clear();
-						}
+						matchZahl.clear();
 					}
 				}
 			} 
