@@ -62,6 +62,7 @@ int check_pattern(std::string & pattern, std::vector<size_t> & Lens)
 	int Lm  = *std::max_element(Lens.begin(), Lens.end());
 	int km =  log (2 * Lm ) / 0.87 + 1;
 	if (kmax-km < 10){
+		// TODO: was does this even mean?
 		std::cout << "Your pattern weight is too small for your sequences, there should be a least 10 value calculable. Please use a pattern with a higher pattern weight."<< '\n';
 		exit(-1);
 	}
@@ -109,7 +110,7 @@ std::pair<float, float> calculate_distance(std::vector<size_t> & matches, size_t
 		if (matches[w] != 0){
 			long double x = pow(q, kmin + w + 1) * length1 * length2; // TODO:again, why + 1
 			long double y = log (matches[w] - x);
-			if (isnan(y) == false){
+			if (std::isnan(y) == false){
 				werte.emplace_back(kmin + w + 1, y);
 			}
 		}
