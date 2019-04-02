@@ -69,10 +69,10 @@ int check_pattern(std::string & pattern, std::vector<size_t> & Lens)
 	return kmax;
 }
 
-void create_spaced_words(std::vector<std::vector<int>> & dest, std::string & pattern, std::vector<std::string> & Seqs, size_t seq_num, size_t length)
+void create_spaced_words(std::vector<std::vector<int>> & dest, std::string & pattern, std::string & sequence, size_t seq_num)
 {
-	for (int iter=0; iter<length-pattern.size()+2; iter++){
-		auto substring = Seqs[seq_num].begin() + iter;
+	for(auto substring = sequence.begin(); substring != sequence.end() - pattern.size() + 1; ++substring)
+	{
 		std::vector <int> vecword;
 		for (int k=0; k<pattern.size(); k++){
 			if (pattern[k] == '1'){
@@ -90,7 +90,7 @@ void create_spaced_words(std::vector<std::vector<int>> & dest, std::string & pat
 				}
 				else{
 					break;
-				}					
+				}
 			}
 		}
 		if(vecword.size() < pattern.size())
@@ -147,11 +147,11 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 	{
 		std::cout<<"sequence number : "<<i<<'\n';
 		std::vector <std::vector<int>> wordlist1;
-		create_spaced_words(wordlist1, pattern, Seqs, i, Lens[i]);
+		create_spaced_words(wordlist1, pattern, Seqs[i], i);
 		for (int j=i+1; j<Seqs.size(); j++)
 		{
 			std::vector <std::vector<int>> wordlistges(wordlist1.begin(), wordlist1.end());
-			create_spaced_words(wordlistges, pattern, Seqs, j, Lens[j]);
+			create_spaced_words(wordlistges, pattern, Seqs[j], j);
 			std::sort(wordlistges.begin(), wordlistges.end()); 
 			int Lmax = std::max(Lens[i], Lens[j]);
 			int kmin =  log (2 * Lmax ) / 0.87 + 1;
@@ -181,7 +181,7 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 
 void print_distance_matrix(std::string outfile, size_t num_sequences, std::vector<std::string> & SeqKeys, std::vector<std::vector<double>> & distance)
 {
-	std::ofstream ff (outfile, std::ios::app);
+	std::ofstream ff (outfile);
 	ff << num_sequences << std::endl;
 	for (int i=0; i<num_sequences; i++){
 		ff << SeqKeys [i] << '\t';
