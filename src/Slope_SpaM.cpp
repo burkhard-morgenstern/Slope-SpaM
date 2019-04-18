@@ -62,18 +62,17 @@ int check_pattern(std::string & pattern, std::vector<size_t> & Lens)
 	int Lm  = *std::max_element(Lens.begin(), Lens.end());
 	int km =  log (2 * Lm ) / 0.87 + 1;
 	if (kmax-km < 10){
-		// TODO: was does this even mean?
-		std::cout << "Your pattern weight is too small for your sequences, there should be a least 10 value calculable. Please use a pattern with a higher pattern weight."<< '\n';
+		std::cerr << "The pattern is too short to get meaningful results. Please use a pattern with a higher weight (more '1's)" << std::endl;
 		exit(-1);
 	}
 	return kmax;
 }
 
-void create_spaced_words(std::vector<std::vector<int>> & dest, std::string & pattern, std::string & sequence, size_t seq_num)
+void create_spaced_words(std::vector<std::vector<uint8_t>> & dest, std::string & pattern, std::string & sequence, size_t seq_num)
 {
 	for(auto substring = sequence.begin(); substring != sequence.end() - pattern.size() + 1; ++substring)
 	{
-		std::vector <int> vecword;
+		std::vector <uint8_t> vecword;
 		for (int k=0; k<pattern.size(); k++){
 			if (pattern[k] == '1'){
 				if (substring[k] == 'A'){
@@ -146,11 +145,11 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 	for (int i=0; i<Seqs.size()-1; i++)
 	{
 		std::cout<<"sequence number : "<<i<<'\n';
-		std::vector <std::vector<int>> wordlist1;
+		std::vector <std::vector<uint8_t>> wordlist1;
 		create_spaced_words(wordlist1, pattern, Seqs[i], i);
 		for (int j=i+1; j<Seqs.size(); j++)
 		{
-			std::vector <std::vector<int>> wordlistges(wordlist1.begin(), wordlist1.end());
+			std::vector <std::vector<uint8_t>> wordlistges(wordlist1.begin(), wordlist1.end());
 			create_spaced_words(wordlistges, pattern, Seqs[j], j);
 			std::sort(wordlistges.begin(), wordlistges.end()); 
 			int Lmax = std::max(Lens[i], Lens[j]);
@@ -160,9 +159,9 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 			{
 				for(auto it = wordlistges.begin(); it != wordlistges.end();)
 				{
-					auto next = std::find_if_not(it, wordlistges.end(), [=](const std::vector<int> & word)
+					auto next = std::find_if_not(it, wordlistges.end(), [=](const std::vector<uint8_t> & word)
 																		{return std::equal(word.begin(), word.begin() + k + 1, it->begin());});
-					int seq_i_count = std::count_if(it, next, [=](std::vector<int> & word){return word.back() == i;});
+					int seq_i_count = std::count_if(it, next, [=](std::vector<uint8_t> & word){return word.back() == i;});
 					int seq_j_count = std::distance(it, next) - seq_i_count;
 					// matche[k - kmin][0] = k + 1; // TODO: why was there k+1 here?
 					matches[k - kmin] += seq_i_count * seq_j_count;
