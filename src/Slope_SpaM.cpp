@@ -57,19 +57,37 @@ void read_sequences(std::string & file_name, std::vector<std::string> & sequence
 
 int check_pattern(std::string & pattern, std::vector<size_t> & Lens)
 {
+	if(std::count_if(pattern.begin(), pattern.end(), [](const char c){return c != '1' && c !='0';}) > 0)
+	{
+		std::string file_name = pattern;
+		std::ifstream infile(file_name);
+		if(infile.is_open() == false)
+		{
+			std::cerr << "The option -p must be either a pattern consisting of 1's and 0's or the name of a file containing such a pattern." << std::endl;
+			exit(-1);
+		}
+		std::getline(infile, pattern);
+		if(std::count_if(pattern.begin(), pattern.end(), [](const char c){return c != '1' && c !='0';}) > 0)
+		{
+			std::cerr << "The file " << file_name << " does not contain a pattern consisting of 1's and 0's. Found: " << pattern << std::endl;
+			exit(-1);
+		}
+	}
 	int lenPat = pattern.length();
 	int kmax = std::count_if(pattern.begin(), pattern.end(), [](const char c){return c == '1';});
 	int Lm  = *std::max_element(Lens.begin(), Lens.end());
 	int km =  log (2 * Lm ) / 0.87 + 1;
 	if (kmax-km < 10){
-		std::cerr << "The pattern is too short to get meaningful results. Please use a pattern with a higher weight (more '1's)" << std::endl;
+		std::cerr << "The pattern is too short to get meaningful results. Please use a pattern with a higher weight (more 1's)" << std::endl;
 		exit(-1);
 	}
+	std::cout << "Weight: " << km << " - " << kmax << std::endl;
 	return kmax;
 }
 
 void create_spaced_words(std::vector<std::vector<uint8_t>> & dest, std::string & pattern, std::string & sequence, size_t seq_num)
 {
+	size_t weight = std::count_if(pattern.begin(), pattern.end(), [](const char c){return c == '1';});
 	for(auto substring = sequence.begin(); substring != sequence.end() - pattern.size() + 1; ++substring)
 	{
 		std::vector <uint8_t> vecword;
@@ -92,7 +110,7 @@ void create_spaced_words(std::vector<std::vector<uint8_t>> & dest, std::string &
 				}
 			}
 		}
-		if(vecword.size() < pattern.size())
+		if(vecword.size() < weight)
 		{
 			continue; // illegal characters
 		}
@@ -196,7 +214,7 @@ int main (int argc, char** argv){
 	args::ArgumentParser parser("Slope-SpaM");
 	args::ValueFlag<std::string> infile(parser, "Input file", "Specify input file name", {'i', "input"}, args::Options::Required);
 	args::ValueFlag<std::string> outfile(parser, "Output file", "Specify output file name", {'o', "output"}, "out.dmat");
-	args::ValueFlag<std::string> pattern_flag(parser, "Pattern", "Use this pattern if specified", {'p', "pattern"}, "111111111111111111111111111111111111");
+	args::ValueFlag<std::string> pattern_flag(parser, "Pattern", "Specify a pattern consisting of 1's and 0's either directly or a file containing such pattern", {'p', "pattern"}, "111111111111111111111111111111111111");
 	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 	parse_options(parser, argc, argv);
 
