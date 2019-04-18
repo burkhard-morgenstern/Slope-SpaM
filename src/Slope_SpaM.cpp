@@ -2,6 +2,7 @@
  * Es ist eine allignemtfreie Anwendung, welche auf der Anzahl von (spaced) word matchen beruht.*/
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -52,6 +53,11 @@ void read_sequences(std::string & file_name, std::vector<std::string> & sequence
         sequences.emplace_back(line);
 		lengths.push_back(line.size());
 	}
+	if(sequences.size() == 0)
+	{
+		std::cerr << "No sequences were found in: " << file_name << std::endl << "Make sure that your file is in multi-FASTA format." << std::endl;
+		exit(-1);
+	}
 	std::cout << sequences.size() << " sequences have been read." << std::endl;
 }
 
@@ -81,7 +87,7 @@ int check_pattern(std::string & pattern, std::vector<size_t> & Lens)
 		std::cerr << "The pattern is too short to get meaningful results. Please use a pattern with a higher weight (more 1's)" << std::endl;
 		exit(-1);
 	}
-	std::cout << "Weight: " << km << " - " << kmax << std::endl;
+	std::cout << "Weight: from " << km << " to " << kmax << std::endl;
 	return kmax;
 }
 
@@ -157,16 +163,20 @@ std::pair<float, float> calculate_distance(std::vector<size_t> & matches, size_t
 	return {p, d};
 }
 
-std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::string> & Seqs, std::string & pattern, std::vector<size_t> & Lens, size_t kmax)
+std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::string> & Seqs, std::vector<std::string> & SeqKeys, std::string & pattern, std::vector<size_t> & Lens, size_t kmax)
 {
 	std::vector<std::vector<double>> distance(Seqs.size(), std::vector<double>(Seqs.size(), 0));
+	size_t total_comparisons = Seqs.size() * (Seqs.size() - 1) / 2;
+	size_t num_comparisons = 0;
 	for (int i=0; i<Seqs.size()-1; i++)
 	{
-		std::cout<<"sequence number : "<<i<<'\n';
 		std::vector <std::vector<uint8_t>> wordlist1;
 		create_spaced_words(wordlist1, pattern, Seqs[i], i);
+		std::string last_distance_string;
 		for (int j=i+1; j<Seqs.size(); j++)
 		{
+			num_comparisons++;
+			std::cout << "\r" << num_comparisons << " / " << total_comparisons << last_distance_string << std::flush;
 			std::vector <std::vector<uint8_t>> wordlistges(wordlist1.begin(), wordlist1.end());
 			create_spaced_words(wordlistges, pattern, Seqs[j], j);
 			std::sort(wordlistges.begin(), wordlistges.end()); 
@@ -186,9 +196,14 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 					it = next;
 				}
 			} 
-			//y werte berrechnen
 			auto values = calculate_distance(matches, Lens[i], Lens[j], kmin);
-			std::cout  << "match probability p : " << values.first << " Jukes-Cantor distance d : " << values.second <<'\n' ;
+			std::stringstream last_distance_stringstream;
+			last_distance_stringstream << " Last distance: " << std::setprecision(3) << std::setw(5) << values.second;
+			if(std::isnan(values.second) == true)
+			{
+				std::cerr << "WARNING: Distance between species " << SeqKeys[i] << " and " << SeqKeys[j] << " could not be calculated!" << std::endl;
+			}
+			last_distance_string = last_distance_stringstream.str();
 			distance [i][j] = values.second;
 			distance [j][i] = values.second; 
 		}
@@ -199,6 +214,11 @@ std::vector<std::vector<double>> calculate_distance_matrix(std::vector<std::stri
 void print_distance_matrix(std::string outfile, size_t num_sequences, std::vector<std::string> & SeqKeys, std::vector<std::vector<double>> & distance)
 {
 	std::ofstream ff (outfile);
+	if(ff.is_open() == false)
+	{
+		std::cerr << "Output file " << outfile << " could not be opened. Distance matrix cannot be written." << std::endl;
+		exit(-1);
+	}
 	ff << num_sequences << std::endl;
 	for (int i=0; i<num_sequences; i++){
 		ff << SeqKeys [i] << '\t';
@@ -226,6 +246,6 @@ int main (int argc, char** argv){
 	std::string pattern = pattern_flag.Get();
 	int kmax = check_pattern(pattern, Lens);
 
-	auto distance = calculate_distance_matrix(Seqs, pattern, Lens, kmax);
+	auto distance = calculate_distance_matrix(Seqs, SeqKeys, pattern, Lens, kmax);
 	print_distance_matrix(outfile.Get(), Seqs.size(), SeqKeys, distance);
 }
