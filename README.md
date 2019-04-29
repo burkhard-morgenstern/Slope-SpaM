@@ -47,5 +47,5 @@ This is free software: you are free to change and redistribute it. There is NO W
 
   
 
-In case of bugs or unexpected errors don't hesitate to send me a mail: sohpie.roehling@stud.uni-goettingen.de)
+In case of bugs or unexpected errors don't hesitate to send me a mail: sophie.roehling@stud.uni-goettingen.de
   
