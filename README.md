@@ -2,7 +2,7 @@
 
   
 
-`Slope-SpaM` calculates the number of spaced word matches between pairs of sequences. The matches have $k$ identical characters as indicated by a binary pattern where '1' denotes a match position. The number of spaced word matches is observed for a range of $k$-values $[k_{min} ... k_{max}]$ where $k_{max}$ is the weight of the pattern passed to `Slope-SpaM`. The distance is calculated from the slope of a function based on these observed numbers of spaced word matches. For more details, check our [paper](https://www.biorxiv.org/content/10.1101/527515v1).
+`Slope-SpaM` calculates the number of spaced word matches between pairs of sequences. The matches have *k* identical characters as indicated by a binary pattern where '1' denotes a match position. The number of spaced word matches is observed for a range of *k*-values [k<sub>min</sub> ... k<sub>max</sub>] where k<sub>max</sub> is the weight of the pattern passed to `Slope-SpaM`. The distance is calculated from the slope of a function based on these observed numbers of spaced word matches. For more details, check our [paper](https://www.biorxiv.org/content/10.1101/527515v1).
   
 
 # Installation and Usage
