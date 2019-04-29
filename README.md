@@ -25,7 +25,7 @@ Example usage:
   
 
 Option | Description
---- | ---
+:---: | :---
 -i | Input file in FASTA format
 -o | Output file in phylip format (distance matrix)
 -p | Binary pattern (either directly or a filename containing the pattern in the first line)
