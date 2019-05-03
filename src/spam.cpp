@@ -1,11 +1,42 @@
 #include "spam.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <thread>
 
 #include "math.hpp"
+
+namespace spam {
+
+auto sequence::from_multi_fasta_file(std::string const& filename)
+    -> std::optional<std::vector<sequence>>
+{
+    auto file = std::ifstream(filename);
+    if (!file.is_open()) {
+        return {};
+    }
+	auto result = std::vector<spam::sequence>{};
+	auto dummy = std::string{};
+    std::getline(file, dummy, '>');
+    while (!file.eof()) {
+		auto seq = spam::sequence{};
+		file >> seq;
+		result.push_back(std::move(seq));
+	}
+	return {result};
+}
+
+auto operator>>(std::istream& is, sequence& seq)
+    -> std::istream&
+{
+    std::getline(is, seq.name);
+    std::getline(is, seq.bases, '>');
+    seq.bases.erase(std::remove_if(seq.bases.begin(), seq.bases.end(),
+        [](const char c) { return isspace(c); }), seq.bases.end());
+    return is;
+}
 
 distance_matrix::distance_matrix(
     std::vector<spam::sequence> const& sequences,
@@ -239,3 +270,5 @@ std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix) {
 	}
 	return os;
 }
+
+} // namespace spam

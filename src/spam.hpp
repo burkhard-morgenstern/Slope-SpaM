@@ -7,11 +7,6 @@
 #include <threadpool/ThreadPool.h>
 
 namespace spam {
-	struct sequence {
-		std::string name;
-		std::string bases;
-	};
-
 	struct pattern {
 		std::string bits;
 		std::vector<size_t> indices;
@@ -38,7 +33,17 @@ namespace spam {
 			return indices.size();
 		}
 	};
-}
+struct sequence {
+	std::string name;
+	std::string bases;
+
+	static auto from_multi_fasta_file(std::string const& filename)
+		-> std::optional<std::vector<sequence>>;
+};
+
+auto operator>>(std::istream& is, sequence& seq)
+	-> std::istream&;
+
 
 class distance_matrix {
 	std::vector<spam::sequence> _sequences;
@@ -98,3 +103,5 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix);
+
+} // namespace spam
