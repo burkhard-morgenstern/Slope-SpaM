@@ -1,10 +1,22 @@
 cmake_minimum_required(VERSION 3.10.2)
 
+project(slope-spam)
 
-project (slope-spam)
+set(CMAKE_CXX_STANDARD 17)
 
-set (CMAKE_CXX_STANDARD 11)
+find_package(Threads)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+add_executable(slope-spam
+    src/config.cpp
+    src/main.cpp
+    src/math.cpp
+    src/spam.cpp
+)
 
-add_subdirectory(src)
+target_include_directories(slope-spam PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party
+)
+
+target_link_libraries(slope-spam
+    ${CMAKE_THREAD_LIBS_INIT}
+)
