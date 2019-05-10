@@ -55,12 +55,32 @@ auto operator>>(std::istream& is, sequence& seq)
 
 using word_t = uint64_t;
 
+class wordlist {
+	std::vector<word_t> words;
+
+public:
+	wordlist(
+		spam::pattern const& pattern,
+		spam::sequence const& sequence,
+		size_t k);
+
+	auto begin() const
+	{
+		return words.begin();
+	}
+
+	auto end() const
+	{
+		return words.end();
+	}
+};
+
 class distance_matrix {
 	std::vector<spam::sequence> sequences;
 	spam::pattern pattern;
 	size_t k;
 
-	std::vector<std::vector<word_t>> wordlists;
+	std::vector<wordlist> wordlists;
 	std::vector<std::vector<double>> matrix;
 
 	ThreadPool threadpool;
@@ -84,25 +104,19 @@ private:
 	void calculate();
 
 	void initialize_matrix();
-
-	void create_wordlists_par();
-
+	void create_wordlists();
 	void calculate_matrix();
-	void calculate_matrix_par();
 
 	auto calculate_element(size_t i, size_t j) const
 		-> std::pair<double, double>;
-
 	static auto calculate_matches(
-		std::vector<word_t> const& wordlist1,
-		std::vector<word_t> const& wordlist2)
+		spam::wordlist const& wordlist1,
+		spam::wordlist const& wordlist2)
 		-> size_t;
-
-	static auto calculate_distance(
+	auto calculate_distance(
 		size_t matches,
 		size_t length1,
-		size_t length2,
-		size_t k)
+		size_t length2) const
 		-> std::pair<double, double>;
 };
 
