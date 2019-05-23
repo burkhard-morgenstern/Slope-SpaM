@@ -59,9 +59,11 @@ auto operator>>(std::istream& is, sequence& seq)
     -> std::istream&
 {
     std::getline(is, seq.name);
-    std::getline(is, seq.bases, '>');
-    seq.bases.erase(std::remove_if(seq.bases.begin(), seq.bases.end(),
-        [](const char c) { return isspace(c); }), seq.bases.end());
+    std::string bases;
+    std::getline(is, bases, '>');
+    bases.erase(std::remove_if(bases.begin(), bases.end(),
+        [](const char c) { return isspace(c); }), bases.end());
+    seq.bases = std::move(bases);
     return is;
 }
 
@@ -69,8 +71,8 @@ auto encode_sequence(spam::sequence const& sequence)
     -> std::vector<int>
 {
     auto result = std::vector<int>{};
-    result.reserve(sequence.bases.size());
-    std::transform(sequence.bases.begin(), sequence.bases.end(),
+    result.reserve(sequence.size());
+    std::transform(sequence.begin(), sequence.end(),
         std::back_inserter(result),
         [](auto&& c) {
             switch(c) {
@@ -112,11 +114,11 @@ wordlist::wordlist(
     spam::pattern pattern)
     : pattern(pattern)
 {
-    if (sequence.bases.size() < pattern.size()) {
+    if (sequence.size() < pattern.size()) {
         return;
     }
     auto encoded = encode_sequence(sequence);
-    words.reserve(sequence.bases.size() - pattern.size() + 1);
+    words.reserve(sequence.size() - pattern.size() + 1);
     for (auto it = encoded.begin();
         it != encoded.end() - pattern.size() + 1;
         ++it)
@@ -168,8 +170,8 @@ void distance_matrix::create_wordlists()
     auto Lmax = std::max_element(
         sequences.begin(), sequences.end(),
         [](auto&& a, auto&& b) {
-            return a.bases.size() < b.bases.size();
-        })->bases.size();
+            return a.size() < b.size();
+        })->size();
     size_t kmin = std::ceil(std::log(Lmax) / 0.87);
     size_t kmax = std::floor(std::log(Lmax) / 0.63);
     auto k = (kmin + kmax) / 2;

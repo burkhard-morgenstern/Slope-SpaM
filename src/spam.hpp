@@ -59,6 +59,22 @@ struct sequence {
 
 	static auto from_multi_fasta_file(std::string const& filename)
 		-> std::optional<std::vector<sequence>>;
+
+	auto size() const
+		-> size_t
+	{
+		return bases.size();
+	}
+
+	auto begin() const
+	{
+		return bases.begin();
+	}
+
+	auto end() const
+	{
+		return bases.end();
+	}
 };
 
 auto operator>>(std::istream& is, sequence& seq)
