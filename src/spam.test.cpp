@@ -49,3 +49,34 @@ TEST_CASE("pattern") {
         }
     }
 }
+
+TEST_CASE("wordlist") {
+    SECTION("insufficient sequence length") {
+        auto sequence = spam::sequence{"", ""};
+        auto pattern = spam::pattern{"11111111"};
+        auto wordlist = spam::wordlist{sequence, pattern};
+        REQUIRE(wordlist.begin() == wordlist.end());
+    }
+    SECTION("simple pattern") {
+        auto sequence = spam::sequence{"", "ACGTACG"};
+        auto pattern = spam::pattern{"1111"};
+        auto expected = std::vector<size_t>{0x1B, 0x6C, 0xB1, 0xC6};
+        auto wordlist = spam::wordlist{sequence, pattern};
+        REQUIRE(std::equal(wordlist.begin(), wordlist.end(), expected.begin()));
+    }
+    SECTION("complex pattern") {
+        auto sequence = spam::sequence{"", "AACCGGTTAA"};
+        auto pattern = spam::pattern{"1010101"};
+        auto expected = std::vector<size_t>{0x1B, 0x1B, 0x6C, 0x6C};
+        auto wordlist = spam::wordlist{sequence, pattern};
+        REQUIRE(std::equal(wordlist.begin(), wordlist.end(), expected.begin()));
+    }
+    SECTION("sorting") {
+        auto sequence = spam::sequence{"", "TGCATGCATGC"};
+        auto pattern = spam::pattern{"1111"};
+        auto expected = std::vector<size_t>{
+            0x39, 0x39, 0x4E, 0x4E, 0x93, 0x93, 0xE4, 0xE4};
+        auto wordlist = spam::wordlist{sequence, pattern};
+        REQUIRE(std::equal(wordlist.begin(), wordlist.end(), expected.begin()));
+    }
+}

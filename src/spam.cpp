@@ -65,15 +65,13 @@ auto operator>>(std::istream& is, sequence& seq)
     return is;
 }
 
-wordlist::wordlist(
-    spam::sequence const& sequence,
-    spam::pattern pattern)
-    : pattern(pattern)
+auto encode_sequence(spam::sequence const& sequence)
+    -> std::vector<int>
 {
-    auto seq_values = std::vector<int>{};
-    seq_values.reserve(sequence.bases.size());
+    auto result = std::vector<int>{};
+    result.reserve(sequence.bases.size());
     std::transform(sequence.bases.begin(), sequence.bases.end(),
-        std::back_inserter(seq_values),
+        std::back_inserter(result),
         [](auto&& c) {
             switch(c) {
             case 'A':
@@ -87,23 +85,44 @@ wordlist::wordlist(
             }
             return -1;
         });
-    seq_values.erase(std::remove_if(
-        seq_values.begin(), seq_values.end(),
-        [](auto&& v) { return v == -1; }), seq_values.end());
+    return result;
+}
 
-	words = std::vector<word_t>{};
-    words.reserve(sequence.bases.size() - pattern.weight() + 1);
-	for(auto substring = seq_values.begin();
-        substring != seq_values.end() - pattern.weight() + 1;
-        ++substring)
-	{
-        auto word = word_t{0};
-        for (auto i = size_t{0}; i < pattern.weight(); ++i) {
-            word <<= 2;
-            word += substring[pattern[i]];
+template<class EncodedIt>
+auto create_word(EncodedIt it, spam::pattern const& pattern)
+    -> word_t
+{
+    auto word = word_t{0};
+    auto successful = true;
+    for (auto pos : pattern) {
+        if (it[pos] == -1) {
+            successful = false;
+            break;
         }
-        words.push_back(word);
-	}
+        word <<= 2;
+        word += it[pos];
+    }
+    return successful
+        ? word
+        : std::numeric_limits<word_t>::max();
+}
+
+wordlist::wordlist(
+    spam::sequence const& sequence,
+    spam::pattern pattern)
+    : pattern(pattern)
+{
+    if (sequence.bases.size() < pattern.size()) {
+        return;
+    }
+    auto encoded = encode_sequence(sequence);
+    words.reserve(sequence.bases.size() - pattern.size() + 1);
+    for (auto it = encoded.begin();
+        it != encoded.end() - pattern.size() + 1;
+        ++it)
+    {
+        words.push_back(create_word(it, pattern));
+    }
     std::sort(words.begin(), words.end());
 }
 
