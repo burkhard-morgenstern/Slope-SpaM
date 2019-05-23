@@ -1,3 +1,6 @@
 [submodule "third_party/threadpool"]
 	path = third_party/threadpool
 	url = https://github.com/progschj/ThreadPool.git
+[submodule "third_party/catch2"]
+	path = third_party/catch2
+	url = https://github.com/catchorg/Catch2.git
