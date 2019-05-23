@@ -131,15 +131,6 @@ private:
 
 	auto calculate_element(size_t i, size_t j) const
 		-> std::pair<double, double>;
-	static auto calculate_matches(
-		spam::wordlist const& wordlist1,
-		spam::wordlist const& wordlist2)
-		-> size_t;
-	auto calculate_distance(
-		size_t matches,
-		size_t length1,
-		size_t length2) const
-		-> std::pair<double, double>;
 };
 
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix);

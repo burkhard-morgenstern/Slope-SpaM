@@ -211,17 +211,7 @@ void distance_matrix::calculate_matrix()
     }
 }
 
-auto distance_matrix::calculate_element(size_t i, size_t j) const
-    -> std::pair<double, double>
-{
-    auto const matches = calculate_matches(wordlists[i], wordlists[j]);
-    return calculate_distance(
-        matches,
-        sequences[i].bases.size() - pattern.weight() + 1,
-        sequences[j].bases.size() - pattern.weight());
-}
-
-auto distance_matrix::calculate_matches(
+auto calculate_matches(
     spam::wordlist const& wordlist1,
     spam::wordlist const& wordlist2)
     -> size_t
@@ -257,13 +247,16 @@ auto distance_matrix::calculate_matches(
     return count;
 }
 
-auto distance_matrix::calculate_distance(
+auto calculate_distance(
     size_t matches,
-    size_t length1,
-    size_t length2) const
+    spam::pattern const& pattern,
+    spam::sequence const& seq1,
+    spam::sequence const& seq2)
     -> std::pair<double, double>
 {
-    double q = 0.25;
+    auto length1 = seq1.size() - pattern.weight() + 1;
+    auto length2 = seq2.size() - pattern.weight();
+    auto q = 0.25;
     long double e = pow(q, pattern.weight()) * length1 * length2;
     long double y = log(matches - e) - log(length1);
     long double x = pattern.weight();
@@ -271,6 +264,14 @@ auto distance_matrix::calculate_distance(
     auto p = exp(m);
     auto d = -(3.0 / 4.0) * log(1 - (4.0 / 3.0) * (1 - p));
     return {p, d};
+}
+
+auto distance_matrix::calculate_element(size_t i, size_t j) const
+    -> std::pair<double, double>
+{
+    return calculate_distance(
+        calculate_matches(wordlists[i], wordlists[j]),
+        pattern, sequences[i], sequences[j]);
 }
 
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
