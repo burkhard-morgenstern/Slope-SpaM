@@ -228,20 +228,18 @@ auto calculate_matches(
     auto it2 = wordlist2.begin();
     auto next2 = next_fn(it2, wordlist2);
     while (it1 != wordlist1.end() && it2 != wordlist2.end()) {
-        if (*it1 == *it2) {
+        auto const v1 = *it1;
+        auto const v2 = *it2;
+        if (v1 == v2) {
             count += std::distance(it1, next1) * std::distance(it2, next2);
+        }
+        if (v1 <= v2) {
             it1 = next1;
             next1 = next_fn(it1, wordlist1);
+        }
+        if (v1 >= v2) {
             it2 = next2;
             next2 = next_fn(it2, wordlist2);
-        } else {
-            if (*it1 < *it2) {
-                it1 = next1;
-                next1 = next_fn(it1, wordlist1);
-            } else {
-                it2 = next2;
-                next2 = next_fn(it2, wordlist2);
-            }
         }
     }
     return count;
