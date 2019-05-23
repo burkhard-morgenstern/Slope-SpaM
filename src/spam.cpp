@@ -42,7 +42,7 @@ distance_matrix::distance_matrix(
     std::vector<spam::sequence> const& sequences,
     spam::pattern const& pattern,
     size_t kmax)
-    : _sequences(sequences),
+    : sequences(sequences),
     pattern(pattern),
     kmax(kmax),
     threadpool(std::thread::hardware_concurrency())
@@ -50,16 +50,16 @@ distance_matrix::distance_matrix(
     calculate();
 }
 
-auto distance_matrix::sequences() const
-    -> std::vector<spam::sequence> const&
+auto distance_matrix::size() const
+    -> size_t
 {
-    return _sequences;
+    return sequences.size();
 }
 
-auto distance_matrix::operator[](size_t idx) const
-    -> std::vector<double> const&
+auto distance_matrix::column(size_t i) const
+    -> std::pair<spam::sequence const&, std::vector<double> const&>
 {
-    return matrix[idx];
+    return {sequences[i], matrix[i]};
 }
 
 void distance_matrix::calculate()
@@ -72,9 +72,9 @@ void distance_matrix::calculate()
 
 void distance_matrix::initialize_matrix()
 {
-    matrix.resize(sequences().size());
+    matrix.resize(sequences.size());
     for (auto& row : matrix) {
-        row = std::vector<double>(sequences().size(), 0);
+        row = std::vector<double>(sequences.size(), 0);
     }
 }
 
@@ -99,17 +99,17 @@ auto create_spaced_words(
 void distance_matrix::create_wordlists()
 {
     wordlists = std::vector<std::vector<std::string>>{};
-    wordlists.reserve(sequences().size());
-    std::transform(sequences().begin(), sequences().end(),
+    wordlists.reserve(sequences.size());
+    std::transform(sequences.begin(), sequences.end(),
         std::back_inserter(wordlists),
         [&](auto&& seq) { return create_spaced_words(pattern, seq.bases); });
 }
 
 void distance_matrix::create_wordlists_par() {
     wordlists = std::vector<std::vector<std::string>>{};
-    wordlists.reserve(sequences().size());
+    wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<std::vector<std::string>>>{};
-    for (auto const& seq : sequences()) {
+    for (auto const& seq : sequences) {
         results.push_back(threadpool.enqueue([&]() {
             return create_spaced_words(pattern, seq.bases);
         }));
@@ -142,8 +142,8 @@ void distance_matrix::create_viewlists()
 
 void distance_matrix::calculate_matrix()
 {
-    for (size_t i = 0; i < sequences().size() - 1; i++) {
-        for (size_t j = i + 1; j < sequences().size(); j++) {
+    for (size_t i = 0; i < sequences.size() - 1; i++) {
+        for (size_t j = i + 1; j < sequences.size(); j++) {
             auto const [probability, distance] = calculate_element(i, j);
             std::cout << "match probability p : " << probability << " Jukes-Cantor distance d : " << distance << '\n';
             matrix[i][j] = distance;
@@ -155,8 +155,8 @@ void distance_matrix::calculate_matrix()
 void distance_matrix::calculate_matrix_par()
 {
     auto results = std::vector<std::future<std::pair<double, double>>>{};
-    for (size_t i = 0; i < sequences().size() - 1; i++) {
-        for (size_t j = i + 1; j < sequences().size(); j++) {
+    for (size_t i = 0; i < sequences.size() - 1; i++) {
+        for (size_t j = i + 1; j < sequences.size(); j++) {
             results.push_back(
                 threadpool.enqueue([&](size_t i, size_t j) {
                     return calculate_element(i, j);
@@ -166,8 +166,8 @@ void distance_matrix::calculate_matrix_par()
     }
 
     size_t idx = 0;
-    for (size_t i = 0; i < sequences().size() - 1; i++) {
-        for (size_t j = i + 1; j < sequences().size(); j++) {
+    for (size_t i = 0; i < sequences.size() - 1; i++) {
+        for (size_t j = i + 1; j < sequences.size(); j++) {
             auto const [probability, distance] = results[idx++].get();
             std::cout << "match probability p : " << probability << " Jukes-Cantor distance d : " << distance << '\n';
             matrix[i][j] = distance;
@@ -179,11 +179,11 @@ void distance_matrix::calculate_matrix_par()
 auto distance_matrix::calculate_element(size_t i, size_t j) const
     -> std::pair<double, double>
 {
-    int Lmax = std::max(sequences()[i].bases.size(), sequences()[j].bases.size());
+    int Lmax = std::max(sequences[i].bases.size(), sequences[j].bases.size());
     int kmin = log(2 * Lmax) / 0.87 + 1;
     auto wordlist = merge_viewlists(viewlists[i], viewlists[j]);
     auto const matches = calculate_matches(wordlist, kmin, kmax);
-    return calculate_distance(matches, sequences()[i].bases.size(), sequences()[j].bases.size(), kmin);
+    return calculate_distance(matches, sequences[i].bases.size(), sequences[j].bases.size(), kmin);
 }
 
 auto distance_matrix::merge_viewlists(
@@ -258,15 +258,16 @@ auto distance_matrix::calculate_distance(std::vector<size_t> const& matches,
     return {p, d};
 }
 
-std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix) {
-	auto const& sequences = matrix.sequences();
-	os << sequences.size() << std::endl;
-	for (int i = 0; i < sequences.size(); i++){
-		os << sequences[i].name << '\t';
-		for (int k = 0; k < sequences.size(); k++){
-			os << matrix[i][k] << '\t';
+std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
+{
+	os << matrix.size() << std::endl;
+	for (int i = 0; i < matrix.size(); i++) {
+        auto const& [sequence, distances] = matrix.column(i);
+		os << sequence.name << '\t';
+		for (int j = 0; j < matrix.size(); j++){
+			os << distances[j] << '\t';
 		}
-		os << std::endl;
+		os << "\n";
 	}
 	return os;
 }

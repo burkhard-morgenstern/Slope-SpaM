@@ -46,7 +46,7 @@ auto operator>>(std::istream& is, sequence& seq)
 
 
 class distance_matrix {
-	std::vector<spam::sequence> _sequences;
+	std::vector<spam::sequence> sequences;
 	spam::pattern pattern;
 	size_t kmax;
 
@@ -62,11 +62,11 @@ public:
 		spam::pattern const& pattern,
 		size_t kmax);
 
-	auto sequences() const
-		-> std::vector<spam::sequence> const&;
+	auto size() const
+		-> size_t;
 
-	auto operator[](size_t idx) const
-		-> std::vector<double> const&;
+	auto column(size_t i) const
+		-> std::pair<spam::sequence const&, std::vector<double> const&>;
 
 private:
 	void calculate();
