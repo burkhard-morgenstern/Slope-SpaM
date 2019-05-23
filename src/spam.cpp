@@ -10,6 +10,33 @@
 
 namespace spam {
 
+pattern::pattern(std::string _bits)
+    : bits(std::move(_bits))
+{
+    auto end = static_cast<ptrdiff_t>(bits.size());
+    for (; end >= 0 && bits[end] != '1'; --end);
+    bits.resize(end + 1);
+    for (size_t i = 0; i < bits.size(); ++i) {
+        if (bits[i] == '1') {
+            indices.push_back(i);
+        }
+    }
+}
+
+auto pattern::reduce(size_t k) const
+    -> pattern
+{
+    if (weight() < k) {
+        throw std::invalid_argument{"weight < k"};
+    }
+
+    if (weight() == k) {
+        return *this;
+    }
+
+    return pattern{{bits.begin(), bits.begin() + indices[k]}};
+}
+
 auto sequence::from_multi_fasta_file(std::string const& filename)
     -> std::optional<std::vector<sequence>>
 {
@@ -39,9 +66,9 @@ auto operator>>(std::istream& is, sequence& seq)
 }
 
 wordlist::wordlist(
-    spam::pattern const& pattern,
     spam::sequence const& sequence,
-    size_t k)
+    spam::pattern pattern)
+    : pattern(pattern)
 {
     auto seq_values = std::vector<int>{};
     seq_values.reserve(sequence.bases.size());
@@ -65,13 +92,13 @@ wordlist::wordlist(
         [](auto&& v) { return v == -1; }), seq_values.end());
 
 	words = std::vector<word_t>{};
-    words.reserve(sequence.bases.size() - k + 1);
+    words.reserve(sequence.bases.size() - pattern.weight() + 1);
 	for(auto substring = seq_values.begin();
-        substring != seq_values.end() - k + 1;
+        substring != seq_values.end() - pattern.weight() + 1;
         ++substring)
 	{
         auto word = word_t{0};
-        for (auto i = size_t{0}; i < k; ++i) {
+        for (auto i = size_t{0}; i < pattern.weight(); ++i) {
             word <<= 2;
             word += substring[pattern[i]];
         }
@@ -81,14 +108,8 @@ wordlist::wordlist(
 }
 
 distance_matrix::distance_matrix(
-    std::vector<spam::sequence> const& sequences,
-    spam::pattern const& pattern)
-    : distance_matrix(std::vector<spam::sequence>{sequences}, pattern)
-{}
-
-distance_matrix::distance_matrix(
     std::vector<spam::sequence>&& sequences,
-    spam::pattern const& pattern)
+    spam::pattern pattern)
     : sequences(std::move(sequences)),
     pattern(pattern),
     threadpool(std::thread::hardware_concurrency())
@@ -132,12 +153,13 @@ void distance_matrix::create_wordlists()
         })->bases.size();
     size_t kmin = std::ceil(std::log(Lmax) / 0.87);
     size_t kmax = std::floor(std::log(Lmax) / 0.63);
-    k = (kmin + kmax) / 2;
+    auto k = (kmin + kmax) / 2;
+    pattern = pattern.reduce(k);
     wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<spam::wordlist>>{};
     for (auto i = size_t{0}; i < sequences.size(); ++i) {
         results.push_back(threadpool.enqueue([&, i = i]() {
-            return spam::wordlist(pattern, sequences[i], k);
+            return spam::wordlist(sequences[i], pattern);
         }));
     }
     for (auto&& future : results) {
@@ -174,8 +196,8 @@ auto distance_matrix::calculate_element(size_t i, size_t j) const
     auto const matches = calculate_matches(wordlists[i], wordlists[j]);
     return calculate_distance(
         matches,
-        sequences[i].bases.size() - k + 1,
-        sequences[j].bases.size() - k);
+        sequences[i].bases.size() - pattern.weight() + 1,
+        sequences[j].bases.size() - pattern.weight());
 }
 
 auto distance_matrix::calculate_matches(
@@ -221,9 +243,9 @@ auto distance_matrix::calculate_distance(
     -> std::pair<double, double>
 {
     double q = 0.25;
-    long double x = pow(q, k) * length1 * length2;
-    long double y = log(matches - x) - log(length1);
-    x = k;
+    long double e = pow(q, pattern.weight()) * length1 * length2;
+    long double y = log(matches - e) - log(length1);
+    long double x = pattern.weight();
     auto m = y / x;
     auto p = exp(m);
     auto d = -(3.0 / 4.0) * log(1 - (4.0 / 3.0) * (1 - p));

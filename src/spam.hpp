@@ -13,25 +13,30 @@ class pattern {
 	std::vector<size_t> indices;
 
 public:
-	pattern(std::string _bits)
-		: bits(std::move(_bits))
-	{
-		for (size_t i = 0; i < bits.size(); ++i) {
-			if (bits[i] == '1') {
-				indices.push_back(i);
-			}
-		}
-	}
+	pattern(std::string bits);
 
-	auto begin() const {
+	auto reduce(size_t k) const
+		-> pattern;
+
+	auto begin() const
+	{
 		return indices.begin();
 	}
 
-	auto end() const {
+	auto end() const
+	{
 		return indices.end();
 	}
 
-	size_t weight() const {
+	auto size() const
+		-> size_t
+	{
+		return bits.size();
+	}
+
+	auto weight() const
+		-> size_t
+	{
 		return indices.size();
 	}
 
@@ -39,6 +44,12 @@ public:
 		-> size_t
 	{
 		return indices[n];
+	}
+
+	auto operator==(pattern const& rhs) const
+		-> bool
+	{
+		return indices == rhs.indices;
 	}
 };
 
@@ -57,12 +68,12 @@ using word_t = uint64_t;
 
 class wordlist {
 	std::vector<word_t> words;
+	spam::pattern pattern;
 
 public:
 	wordlist(
-		spam::pattern const& pattern,
 		spam::sequence const& sequence,
-		size_t k);
+		spam::pattern pattern);
 
 	auto begin() const
 	{
@@ -78,7 +89,6 @@ public:
 class distance_matrix {
 	std::vector<spam::sequence> sequences;
 	spam::pattern pattern;
-	size_t k;
 
 	std::vector<wordlist> wordlists;
 	std::vector<std::vector<double>> matrix;
@@ -87,12 +97,8 @@ class distance_matrix {
 
 public:
 	distance_matrix(
-		std::vector<spam::sequence> const& sequences,
-		spam::pattern const& pattern);
-
-	distance_matrix(
 		std::vector<spam::sequence>&& sequences,
-		spam::pattern const& pattern);
+		spam::pattern pattern);
 
 	auto size() const
 		-> size_t;

@@ -33,6 +33,7 @@ target_link_libraries(slope-spam
 add_executable(slope-spam-test
     $<TARGET_OBJECTS:slope-spam-common>
     src/main.test.cpp
+    src/spam.test.cpp
 )
 
 target_include_directories(slope-spam-test PRIVATE
