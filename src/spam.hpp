@@ -91,6 +91,10 @@ class wordlist {
 	spam::pattern pattern;
 
 public:
+	static auto max_wordsize()
+		-> size_t;
+
+public:
 	wordlist(
 		spam::sequence const& sequence,
 		spam::pattern pattern);

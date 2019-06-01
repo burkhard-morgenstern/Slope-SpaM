@@ -88,6 +88,12 @@ auto operator>>(std::istream& is, sequence& seq)
     return is;
 }
 
+auto wordlist::max_wordsize()
+    -> size_t
+{
+    return 4 * sizeof(word_t) - 1;
+}
+
 auto encode_sequence(spam::sequence const& sequence)
     -> std::vector<int>
 {
