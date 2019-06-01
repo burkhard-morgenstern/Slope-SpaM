@@ -8,6 +8,8 @@
 
 #include "math.hpp"
 
+namespace fs = std::filesystem;
+
 namespace spam {
 
 pattern::pattern(std::string _bits)
@@ -37,7 +39,26 @@ auto pattern::reduce(size_t k) const
     return pattern{{bits.begin(), bits.begin() + indices[k]}};
 }
 
-auto sequence::from_multi_fasta_file(std::string const& filename)
+
+auto sequence::from_directory(fs::path const& path)
+    -> std::optional<std::vector<sequence>>
+{
+    if (!fs::is_directory(path)) {
+        return {};
+    }
+
+	auto result = std::vector<spam::sequence>{};
+    for (auto& entry : fs::directory_iterator(path)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".fasta") {
+            auto seqs = *from_multi_fasta_file(entry);
+            std::copy(seqs.begin(), seqs.end(), std::back_inserter(result));
+        }
+    }
+
+    return {result};
+}
+
+auto sequence::from_multi_fasta_file(fs::path const& filename)
     -> std::optional<std::vector<sequence>>
 {
     auto file = std::ifstream(filename);

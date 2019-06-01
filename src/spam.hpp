@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iosfwd>
 #include <string>
 #include <string_view>
@@ -57,7 +58,10 @@ struct sequence {
 	std::string name;
 	std::string bases;
 
-	static auto from_multi_fasta_file(std::string const& filename)
+	static auto from_directory(std::filesystem::path const& path)
+		-> std::optional<std::vector<sequence>>;
+
+	static auto from_multi_fasta_file(std::filesystem::path const& filename)
 		-> std::optional<std::vector<sequence>>;
 
 	auto size() const
