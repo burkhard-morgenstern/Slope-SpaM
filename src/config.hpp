@@ -1,9 +1,11 @@
+#include <filesystem>
 #include <string>
+#include <vector>
 
 namespace spam {
 
     struct config {
-        std::string in;
+        std::vector<std::filesystem::path> in;
         std::string out;
         std::string pattern;
 

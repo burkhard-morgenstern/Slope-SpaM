@@ -27,10 +27,19 @@ namespace spam {
 
     config config::from_args(int argc, char** argv) {
         args::ArgumentParser parser("Slope-SpaM");
-        args::ValueFlag<std::string> infile(parser, "Input file", "Specify input file name", {'i', "input"}, args::Options::Required);
-        args::ValueFlag<std::string> outfile(parser, "Output file", "Specify output file name", {'o', "output"}, "out.dmat");
-        args::ValueFlag<std::string> patternflag(parser, "Pattern", "Use this pattern if specified", {'p', "pattern"}, "111111111111111111111111111111111111");
-        args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+        args::ValueFlag<std::string> outfile(parser, "output file",
+            "The output file. Ignored if multiple inputs are given.",
+            {'o', "output"}, "");
+        args::ValueFlag<std::string> patternflag(parser, "word pattern",
+            "The binary word pattern used to create wordlists from sequences. "
+            "May only include \'0\' and \'1\' characters.",
+            {'p', "pattern"}, "111111111111111111111111111111111111");
+        args::HelpFlag help(parser, "help", "Show help.", {'h', "help"});
+        args::PositionalList<std::string> input_files(parser, "input files",
+            "Fasta files or directories of fasta files to process. If more than"
+            " one file is given, the option output is ignored. Instead for each"
+            " .fasta file a .dmat file and for each directory a .dir.dmat file"
+            " with the same name is created.");
         parse_options(parser, argc, argv);
 
         return {infile.Get(), outfile.Get(), patternflag.Get()};

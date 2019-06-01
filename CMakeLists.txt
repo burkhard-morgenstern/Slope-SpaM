@@ -8,12 +8,12 @@ set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 
 find_package(Threads)
 
-add_library(slope-spam-common OBJECT
-    src/spam.cpp
+include_directories(
+    ${CMAKE_SOURCE_DIR}/third_party
 )
 
-target_include_directories(slope-spam-common PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party
+add_library(slope-spam-common OBJECT
+    src/spam.cpp
 )
 
 add_executable(slope-spam
@@ -23,12 +23,9 @@ add_executable(slope-spam
     src/math.cpp
 )
 
-target_include_directories(slope-spam PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party
-)
-
 target_link_libraries(slope-spam
     ${CMAKE_THREAD_LIBS_INIT}
+    stdc++fs
 )
 
 add_executable(slope-spam-test
@@ -38,12 +35,12 @@ add_executable(slope-spam-test
 )
 
 target_include_directories(slope-spam-test PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party
     ${CMAKE_SOURCE_DIR}/third_party/catch2/single_include
 )
 
 target_link_libraries(slope-spam-test
     ${CMAKE_THREAD_LIBS_INIT}
+    stdc++fs
 )
 
 add_test(slope-spam-test slope-spam-test)
