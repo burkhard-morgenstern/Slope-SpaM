@@ -2,7 +2,12 @@
 
 #include <iostream>
 
+#include <range/v3/algorithm.hpp>
+
 #include "args.hpp"
+#include "filesystem.hpp"
+
+namespace fs = std::filesystem;
 
 namespace spam {
 
@@ -42,7 +47,15 @@ namespace spam {
             " with the same name is created.");
         parse_options(parser, argc, argv);
 
-        return {infile.Get(), outfile.Get(), patternflag.Get()};
+        auto inputs = std::vector<fs::path>{};
+        for (auto& in : input_files.Get()) {
+            auto resolved = resolve_wildcards(in);
+            std::copy(resolved.begin(), resolved.end(),
+                std::back_inserter(inputs));
+        }
+        ranges::sort(inputs);
+
+        return {inputs, outfile.Get(), patternflag.Get()};
     }
 
 }

@@ -10,6 +10,7 @@ find_package(Threads)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/third_party
+    ${CMAKE_SOURCE_DIR}/third_party/rangev3/include
 )
 
 add_library(slope-spam-common OBJECT
@@ -19,6 +20,7 @@ add_library(slope-spam-common OBJECT
 add_executable(slope-spam
     $<TARGET_OBJECTS:slope-spam-common>
     src/config.cpp
+    src/filesystem.cpp
     src/main.cpp
     src/math.cpp
 )
