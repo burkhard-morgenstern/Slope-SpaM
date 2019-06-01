@@ -156,11 +156,13 @@ wordlist::wordlist(
 }
 
 distance_matrix::distance_matrix(
-    std::vector<spam::sequence>&& sequences,
-    spam::pattern pattern)
+    std::vector<spam::sequence> sequences,
+    spam::pattern pattern,
+    std::shared_ptr<ThreadPool> threadpool /* =
+        std::make_shared<ThreadPool>(std::thread::hardware_concurrency()) */)
     : sequences(std::move(sequences)),
     pattern(pattern),
-    threadpool(std::thread::hardware_concurrency())
+    threadpool(std::move(threadpool))
 {
     calculate();
 }
@@ -206,7 +208,7 @@ void distance_matrix::create_wordlists()
     wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<spam::wordlist>>{};
     for (auto i = size_t{0}; i < sequences.size(); ++i) {
-        results.push_back(threadpool.enqueue([&, i = i]() {
+        results.push_back(threadpool->enqueue([&, i = i]() {
             return spam::wordlist(sequences[i], pattern);
         }));
     }
@@ -221,7 +223,7 @@ void distance_matrix::calculate_matrix()
     for (size_t i = 0; i < sequences.size() - 1; i++) {
         for (size_t j = i + 1; j < sequences.size(); j++) {
             results.push_back(
-                threadpool.enqueue([&](size_t i, size_t j) {
+                threadpool->enqueue([&](size_t i, size_t j) {
                     return calculate_element(i, j);
                 }, i, j)
             );
