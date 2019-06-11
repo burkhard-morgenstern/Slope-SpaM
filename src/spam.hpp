@@ -84,7 +84,7 @@ struct sequence {
 auto operator>>(std::istream& is, sequence& seq)
 	-> std::istream&;
 
-using word_t = uint64_t;
+using word_t = __uint128_t;
 
 class wordlist {
 	std::vector<word_t> words;
