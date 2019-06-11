@@ -6,6 +6,7 @@
 #include <set>
 #include <thread>
 
+#include <range/v3/algorithm.hpp>
 #include <range/v3/view.hpp>
 
 #include "math.hpp"
@@ -291,6 +292,20 @@ auto calculate_matches(
     return count;
 }
 
+auto background_match_probability(
+    spam::sequence const& seq1,
+    spam::sequence const& seq2)
+    -> double
+{
+    auto result = 0.0;
+    for (auto c : {'A', 'C', 'G', 'T'}) {
+        result +=
+            1.0 * ranges::count(seq1, c) / seq1.size()
+            * (1.0 * ranges::count(seq2, c) / seq2.size());
+    }
+    return result;
+}
+
 auto calculate_distance(
     size_t matches,
     size_t k,
@@ -301,7 +316,7 @@ auto calculate_distance(
 {
     auto length1 = seq1.size() - kmax + 1;
     auto length2 = seq2.size() - kmax;
-    auto q = 0.25;
+    auto q = background_match_probability(seq1, seq2);
     long double e = pow(q, k) * length1 * length2;
     long double dy = log(matches - e) - log(length1);
     long double dx = k;
