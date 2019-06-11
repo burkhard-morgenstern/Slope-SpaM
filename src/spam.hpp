@@ -113,6 +113,7 @@ public:
 class distance_matrix {
 	std::vector<spam::sequence> sequences;
 	spam::pattern pattern;
+	size_t kmin, kmax;
 
 	std::vector<wordlist> wordlists;
 	std::vector<std::vector<double>> matrix;

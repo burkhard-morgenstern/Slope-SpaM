@@ -6,9 +6,12 @@
 #include <set>
 #include <thread>
 
+#include <range/v3/view.hpp>
+
 #include "math.hpp"
 
 namespace fs = std::filesystem;
+namespace rv = ranges::view;
 
 namespace spam {
 
@@ -131,6 +134,7 @@ auto create_word(EncodedIt it, spam::pattern const& pattern)
         word <<= 2;
         word += it[pos];
     }
+    word <<= 8 * sizeof(word_t) - 2 * pattern.weight();
     return successful
         ? word
         : std::numeric_limits<word_t>::max();
@@ -201,10 +205,8 @@ void distance_matrix::create_wordlists()
         [](auto&& a, auto&& b) {
             return a.size() < b.size();
         })->size();
-    size_t kmin = std::ceil(std::log(Lmax) / 0.87);
-    size_t kmax = std::floor(std::log(Lmax) / 0.63);
-    auto k = (kmin + kmax) / 2;
-    pattern = pattern.reduce(k);
+    kmin = std::ceil(std::log(Lmax) / 0.87);
+    kmax = std::floor(std::log(Lmax) / 0.63);
     wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<spam::wordlist>>{};
     for (auto i = size_t{0}; i < sequences.size(); ++i) {
@@ -240,11 +242,26 @@ void distance_matrix::calculate_matrix()
     }
 }
 
+auto reduce_wordlist(spam::wordlist const& wordlist, size_t k)
+{
+    auto reduction_pattern = std::numeric_limits<word_t>::max();
+    reduction_pattern <<= 8 * sizeof(word_t) - 2 * k;
+    return wordlist
+        | rv::transform(
+            [&wordlist, reduction_pattern = reduction_pattern](auto word) {
+                return word & reduction_pattern;
+            });
+}
+
 auto calculate_matches(
-    spam::wordlist const& wordlist1,
-    spam::wordlist const& wordlist2)
+    spam::wordlist const& _wordlist1,
+    spam::wordlist const& _wordlist2,
+    size_t k)
     -> size_t
 {
+    auto wordlist1 = reduce_wordlist(_wordlist1, k);
+    auto wordlist2 = reduce_wordlist(_wordlist2, k);
+
     size_t count = 0;
     auto next_fn = [](auto it, auto&& wordlist) {
         return std::find_if_not(it, wordlist.end(),
@@ -276,18 +293,19 @@ auto calculate_matches(
 
 auto calculate_distance(
     size_t matches,
-    spam::pattern const& pattern,
+    size_t k,
+    size_t kmax,
     spam::sequence const& seq1,
     spam::sequence const& seq2)
     -> std::pair<double, double>
 {
-    auto length1 = seq1.size() - pattern.weight() + 1;
-    auto length2 = seq2.size() - pattern.weight();
+    auto length1 = seq1.size() - kmax + 1;
+    auto length2 = seq2.size() - kmax;
     auto q = 0.25;
-    long double e = pow(q, pattern.weight()) * length1 * length2;
-    long double y = log(matches - e) - log(length1);
-    long double x = pattern.weight();
-    auto m = y / x;
+    long double e = pow(q, k) * length1 * length2;
+    long double dy = log(matches - e) - log(length1);
+    long double dx = k;
+    auto m = dy / dx;
     auto p = exp(m);
     auto d = -(3.0 / 4.0) * log(1 - (4.0 / 3.0) * (1 - p));
     return {p, d};
@@ -296,9 +314,9 @@ auto calculate_distance(
 auto distance_matrix::calculate_element(size_t i, size_t j) const
     -> std::pair<double, double>
 {
-    return calculate_distance(
-        calculate_matches(wordlists[i], wordlists[j]),
-        pattern, sequences[i], sequences[j]);
+    auto const k = (kmax + kmin) / 2;
+    auto const matches = calculate_matches(wordlists[i], wordlists[j], k);
+    return calculate_distance(matches, k, kmax, sequences[i], sequences[j]);
 }
 
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
