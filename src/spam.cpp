@@ -99,9 +99,9 @@ auto wordlist::max_wordsize()
 }
 
 auto encode_sequence(spam::sequence const& sequence)
-    -> std::vector<int>
+    -> std::vector<int8_t>
 {
-    auto result = std::vector<int>{};
+    auto result = std::vector<int8_t>{};
     result.reserve(sequence.size());
     std::transform(sequence.begin(), sequence.end(),
         std::back_inserter(result),
