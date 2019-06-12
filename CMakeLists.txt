@@ -6,10 +6,13 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 
+add_subdirectory(third_party/fmt)
+
 find_package(Threads)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/third_party
+    ${CMAKE_SOURCE_DIR}/third_party/fmt/include
     ${CMAKE_SOURCE_DIR}/third_party/rangev3/include
 )
 
@@ -27,6 +30,7 @@ add_executable(slope-spam
 
 target_link_libraries(slope-spam
     ${CMAKE_THREAD_LIBS_INIT}
+    fmt::fmt
     stdc++fs
 )
 
@@ -42,6 +46,7 @@ target_include_directories(slope-spam-test PRIVATE
 
 target_link_libraries(slope-spam-test
     ${CMAKE_THREAD_LIBS_INIT}
+    fmt::fmt
     stdc++fs
 )
 

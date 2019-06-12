@@ -1,12 +1,12 @@
 #include <algorithm>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
 #include <fstream>
 #include <map>
 #include <numeric>
 #include <optional>
 #include <vector>
+
+#include <fmt/format.h>
 
 #include "config.hpp"
 #include "spam.hpp"
@@ -30,16 +30,16 @@ public:
 		-> int
 	{
 		if (config.in.size() == 0) {
-			std::cerr << "No input files!\n";
+			fmt::print(stderr, "No input files!\n");
 			return 1;
 		}
 
 		auto const pattern = spam::pattern{config.pattern};
 		if (pattern.weight() > spam::wordlist::max_wordsize()) {
-			std::cerr << "Unsupported pattern weight of "
-				<< pattern.weight()
-				<< "! The supported maximum weight is "
-				<< spam::wordlist::max_wordsize() << "!\n";
+			fmt::print(stderr,
+				"Unsupported pattern weight of {}! "
+				"The supported maximum weight is {}!\n",
+				pattern.weight(), spam::wordlist::max_wordsize());
 			return 2;
 		}
 
@@ -67,12 +67,13 @@ private:
 	auto process(fs::path const& path, std::ostream& os)
 		-> void
 	{
-		std::cout << "Processing " << path << "..." << std::flush << "\r";
+		fmt::print("Processing {}...\n", path.string());
+		fflush(stdout);
 		auto sequences = fs::is_directory(path)
 			? *spam::sequence::from_directory(path)
 			: *spam::sequence::from_multi_fasta_file(path);
 		if (sequences.size() == 0) {
-			std::cerr << "Empty input path \"" << path << "\".\n";
+			fmt::print(stderr, "Empty input path \"{}\".\n", path.string());
 		} else {
 			auto const matrix = spam::distance_matrix(
 				std::move(sequences), pattern, threadpool);

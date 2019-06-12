@@ -1,7 +1,6 @@
 #include "config.hpp"
 
-#include <iostream>
-
+#include <fmt/format.h>
 #include <range/v3/algorithm.hpp>
 
 #include "args.hpp"
@@ -19,13 +18,12 @@ namespace spam {
         }
         catch (args::Help)
         {
-            std::cout << parser;
+            fmt::print("{}", parser.Help());
             exit(0);
         }
         catch (args::Error e)
         {
-            std::cerr << e.what() << std::endl;
-            std::cerr << parser;
+            fmt::print(stderr, "{}\n{}", e.what(), parser);
             exit(-1);
         }
     }
