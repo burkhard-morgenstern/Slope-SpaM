@@ -348,7 +348,9 @@ auto calculate_matches(
         auto const v1 = *it1;
         auto const v2 = *it2;
         if (v1 == v2) {
-            count += std::distance(it1, next1) * std::distance(it2, next2);
+            count += std::min(
+                std::distance(it1, next1),
+                std::distance(it2, next2));
         }
         if (v1 <= v2) {
             it1 = next1;
@@ -403,8 +405,7 @@ auto calculate_distance(
     auto length1 = seq1.size() - kmax + 1;
     auto length2 = seq2.size() - kmax;
     auto q = background_match_probability(seq1, seq2);
-    long double e = pow(q, k) * length1 * length2;
-    long double dy = log(matches - e) - log(length1);
+    long double dy = log(matches) - log(length1);
     long double dx = k;
     auto m = dy / dx;
     auto p = exp(m);
