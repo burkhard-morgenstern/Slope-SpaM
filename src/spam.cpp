@@ -6,6 +6,7 @@
 #include <thread>
 
 #include <range/v3/algorithm.hpp>
+#include <range/v3/numeric.hpp>
 #include <range/v3/view.hpp>
 
 #include "math.hpp"
@@ -42,44 +43,7 @@ auto pattern::reduce(size_t k) const
     return pattern{{bits.begin(), bits.begin() + indices[k]}};
 }
 
-
-auto sequence::from_directory(fs::path const& path)
-    -> std::optional<std::vector<sequence>>
-{
-    if (!fs::is_directory(path)) {
-        return {};
-    }
-
-	auto result = std::vector<spam::sequence>{};
-    for (auto& entry : fs::directory_iterator(path)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".fasta") {
-            auto seqs = *from_multi_fasta_file(entry);
-            std::copy(seqs.begin(), seqs.end(), std::back_inserter(result));
-        }
-    }
-
-    return {result};
-}
-
-auto sequence::from_multi_fasta_file(fs::path const& filename)
-    -> std::optional<std::vector<sequence>>
-{
-    auto file = std::ifstream(filename);
-    if (!file.is_open()) {
-        return {};
-    }
-	auto result = std::vector<spam::sequence>{};
-	auto dummy = std::string{};
-    std::getline(file, dummy, '>');
-    while (!file.eof()) {
-		auto seq = spam::sequence{};
-		file >> seq;
-		result.push_back(std::move(seq));
-	}
-	return {result};
-}
-
-auto operator>>(std::istream& is, sequence& seq)
+auto operator>>(std::istream& is, assembled_sequence& seq)
     -> std::istream&
 {
     std::getline(is, seq.name);
@@ -91,13 +55,103 @@ auto operator>>(std::istream& is, sequence& seq)
     return is;
 }
 
+auto sequence::name() const
+    -> std::string
+{
+    if (std::holds_alternative<assembled_sequence>(*this)) {
+        return std::get<assembled_sequence>(*this).name;
+    } else {
+        return std::get<unassembled_sequence>(*this).name;
+    }
+}
+
+auto sequence::size() const
+    -> size_t
+{
+    if (std::holds_alternative<assembled_sequence>(*this)) {
+        return std::get<assembled_sequence>(*this).size();
+    } else {
+        return ranges::accumulate(
+            std::get<unassembled_sequence>(*this).reads
+                | rv::transform(
+                    [](auto&& read) {
+                        return read.size();
+                    }),
+            size_t{0});
+    }
+}
+
+auto load_directory(fs::path const& path)
+    -> std::optional<std::vector<sequence>>
+{
+    if (!fs::is_directory(path)) {
+        return {};
+    }
+
+	auto result = std::vector<sequence>{};
+    for (auto& entry : fs::directory_iterator(path)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".fasta") {
+            result.push_back(*load_fasta_file(entry));
+        }
+    }
+
+    return {result};
+}
+
+auto load_fasta_file(std::filesystem::path const& filename)
+    -> std::optional<sequence>
+{
+    auto file = std::ifstream(filename);
+    if (!file.is_open()) {
+        return {};
+    }
+	auto reads = std::vector<assembled_sequence>{};
+	auto dummy = std::string{};
+    std::getline(file, dummy, '>');
+    while (!file.eof()) {
+		auto seq = assembled_sequence{};
+		file >> seq;
+		reads.push_back(std::move(seq));
+	}
+
+    if (reads.size() == 1) {
+        return {sequence{reads[0]}};
+    } else {
+        auto result = unassembled_sequence{};
+        result.name = filename.stem();
+        result.reads.resize(reads.size());
+        for (auto i = size_t{0}; i < reads.size(); ++i) {
+            result.reads[i] = std::move(reads[i].bases);
+        }
+        return {sequence{result}};
+    }
+}
+
+auto load_multi_fasta_file(fs::path const& filename)
+    -> std::optional<std::vector<assembled_sequence>>
+{
+    auto file = std::ifstream(filename);
+    if (!file.is_open()) {
+        return {};
+    }
+	auto result = std::vector<assembled_sequence>{};
+	auto dummy = std::string{};
+    std::getline(file, dummy, '>');
+    while (!file.eof()) {
+		auto seq = assembled_sequence{};
+		file >> seq;
+		result.push_back(std::move(seq));
+	}
+	return {result};
+}
+
 auto wordlist::max_wordsize()
     -> size_t
 {
     return 4 * sizeof(word_t) - 1;
 }
 
-auto encode_sequence(spam::sequence const& sequence)
+auto encode_sequence(std::string const& sequence)
     -> std::vector<int8_t>
 {
     auto result = std::vector<int8_t>{};
@@ -140,21 +194,38 @@ auto create_word(EncodedIt it, spam::pattern const& pattern)
         : std::numeric_limits<word_t>::max();
 }
 
-wordlist::wordlist(
-    spam::sequence const& sequence,
-    spam::pattern pattern)
-    : pattern(pattern)
+auto create_words(std::string const& sequence, spam::pattern const& pattern)
+    -> std::vector<word_t>
 {
     if (sequence.size() < pattern.size()) {
-        return;
+        return {};
     }
     auto encoded = encode_sequence(sequence);
+    auto words = std::vector<word_t>{};
     words.reserve(sequence.size() - pattern.size() + 1);
     for (auto it = encoded.begin();
         it != encoded.end() - pattern.size() + 1;
         ++it)
     {
         words.push_back(create_word(it, pattern));
+    }
+    return words;
+}
+
+wordlist::wordlist(
+    spam::sequence const& sequence,
+    spam::pattern pattern)
+    : pattern(pattern)
+{
+    if (std::holds_alternative<assembled_sequence>(sequence)) {
+        words = create_words(
+            std::get<assembled_sequence>(sequence).bases, pattern);
+    } else {
+        auto& reads = std::get<unassembled_sequence>(sequence).reads;
+        for (auto& read : reads) {
+            auto tmp = create_words(read, pattern);
+            std::copy(tmp.begin(), tmp.end(), std::back_inserter(words));
+        }
     }
     std::sort(words.begin(), words.end());
 }
@@ -291,6 +362,22 @@ auto calculate_matches(
     return count;
 }
 
+auto count_nucleotide(spam::sequence const& sequence, char nucleotide)
+    -> size_t
+{
+    if (std::holds_alternative<assembled_sequence>(sequence)) {
+        return ranges::count(std::get<assembled_sequence>(sequence).bases, nucleotide);
+    } else {
+        return ranges::accumulate(
+            std::get<unassembled_sequence>(sequence).reads
+                | rv::transform(
+                    [nucleotide](auto&& read) {
+                        return ranges::count(read, nucleotide);
+                    }),
+            size_t{0});
+    }
+}
+
 auto background_match_probability(
     spam::sequence const& seq1,
     spam::sequence const& seq2)
@@ -299,8 +386,8 @@ auto background_match_probability(
     auto result = 0.0;
     for (auto c : {'A', 'C', 'G', 'T'}) {
         result +=
-            1.0 * ranges::count(seq1, c) / seq1.size()
-            * (1.0 * ranges::count(seq2, c) / seq2.size());
+            1.0 * count_nucleotide(seq1, c) / seq1.size()
+            * (1.0 * count_nucleotide(seq2, c) / seq2.size());
     }
     return result;
 }
@@ -338,7 +425,7 @@ std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
 	os << matrix.size() << std::endl;
 	for (int i = 0; i < matrix.size(); i++) {
         auto const& [sequence, distances] = matrix.column(i);
-		os << sequence.name << '\t';
+		os << sequence.name() << '\t';
 		for (int j = 0; j < matrix.size(); j++){
 			os << distances[j] << '\t';
 		}

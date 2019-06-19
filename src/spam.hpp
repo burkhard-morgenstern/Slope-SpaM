@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <threadpool/ThreadPool.h>
@@ -54,15 +55,14 @@ public:
 	}
 };
 
-struct sequence {
+struct unassembled_sequence {
+	std::string name;
+	std::vector<std::string> reads;
+};
+
+struct assembled_sequence {
 	std::string name;
 	std::string bases;
-
-	static auto from_directory(std::filesystem::path const& path)
-		-> std::optional<std::vector<sequence>>;
-
-	static auto from_multi_fasta_file(std::filesystem::path const& filename)
-		-> std::optional<std::vector<sequence>>;
 
 	auto size() const
 		-> size_t
@@ -81,8 +81,27 @@ struct sequence {
 	}
 };
 
-auto operator>>(std::istream& is, sequence& seq)
+auto operator>>(std::istream& is, assembled_sequence& seq)
 	-> std::istream&;
+
+struct sequence
+	: public std::variant<unassembled_sequence, assembled_sequence>
+{
+	auto name() const
+		-> std::string;
+
+	auto size() const
+		-> size_t;
+};
+
+auto load_directory(std::filesystem::path const& path)
+	-> std::optional<std::vector<sequence>>;
+
+auto load_fasta_file(std::filesystem::path const& filename)
+	-> std::optional<sequence>;
+
+auto load_multi_fasta_file(std::filesystem::path const& filename)
+	-> std::optional<std::vector<assembled_sequence>>;
 
 using word_t = __uint128_t;
 
