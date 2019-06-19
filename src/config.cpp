@@ -37,6 +37,10 @@ namespace spam {
             "The binary word pattern used to create wordlists from sequences. "
             "May only include \'0\' and \'1\' characters.",
             {'p', "pattern"}, "111111111111111111111111111111111111");
+        args::Flag as_reads(parser, "multi-fasta as reads",
+            "Use sequences from multi-fasta files as reads of one sequence "
+            "instead of multiple sequences.",
+            {'a', "as-reads"}, false);
         args::HelpFlag help(parser, "help", "Show help.", {'h', "help"});
         args::PositionalList<std::string> input_files(parser, "input files",
             "Fasta files or directories of fasta files to process. If more than"
@@ -53,7 +57,7 @@ namespace spam {
         }
         ranges::sort(inputs);
 
-        return {inputs, outfile.Get(), patternflag.Get()};
+        return {inputs, outfile.Get(), patternflag.Get(), as_reads.Get()};
     }
 
 }

@@ -7,11 +7,13 @@
 #include <vector>
 
 #include <fmt/format.h>
+#include <range/v3/view.hpp>
 
 #include "config.hpp"
 #include "spam.hpp"
 
 namespace fs = std::filesystem;
+namespace rv = ranges::view;
 
 class application {
 	spam::config config;
@@ -64,14 +66,32 @@ public:
 	}
 
 private:
+	auto load_sequences(fs::path const& path)
+		-> std::vector<spam::sequence>
+	{
+		if (fs::is_directory(path)) {
+			return *spam::load_directory(path);
+		} else {
+			if (config.multi_fasta_as_reads) {
+				return std::vector<spam::sequence>{*spam::load_fasta_file(path)};
+			} else {
+				auto assembled_sequences = *spam::load_multi_fasta_file(path);
+				return assembled_sequences
+					| rv::transform(
+						[](auto&& seq) {
+							return spam::sequence{std::move(seq)};
+						})
+					| ranges::to<std::vector<spam::sequence>>();
+			}
+		}
+	}
+
 	auto process(fs::path const& path, std::ostream& os)
 		-> void
 	{
 		fmt::print("Processing {}...\n", path.string());
 		fflush(stdout);
-		auto sequences = fs::is_directory(path)
-			? *spam::sequence::from_directory(path)
-			: *spam::sequence::from_multi_fasta_file(path);
+		auto sequences = load_sequences(path);
 		if (sequences.size() == 0) {
 			fmt::print(stderr, "Empty input path \"{}\".\n", path.string());
 		} else {
