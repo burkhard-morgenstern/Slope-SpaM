@@ -18,14 +18,42 @@ namespace spam {
         }
         catch (args::Help)
         {
-            fmt::print("{}", parser.Help());
-            exit(0);
+            throw config_exception(fmt::format("{}", parser.Help()));
         }
         catch (args::Error e)
         {
-            fmt::print(stderr, "{}\n{}", e.what(), parser);
-            exit(-1);
+            throw config_exception(fmt::format("{}\n", e.what()));
         }
+    }
+
+    auto sanitize_inputs(std::vector<std::string> inputs)
+        -> std::vector<fs::path>
+    {
+        auto results = std::vector<fs::path>{};
+        for (auto& in : inputs) {
+            auto resolved = resolve_wildcards(in);
+            std::copy(resolved.begin(), resolved.end(),
+                std::back_inserter(results));
+        }
+
+        if (results.size() == 0) {
+            throw config_exception("No input files!\n");
+        }
+
+        return results;
+    }
+
+    auto parse_pattern(std::string const& patternflag)
+        -> spam::pattern
+    {
+        auto const pattern = spam::pattern{patternflag};
+        if (pattern.weight() > spam::wordlist::max_wordsize()) {
+            throw config_exception(fmt::format(
+                "Unsupported pattern weight of {}! "
+                "The supported maximum weight is {}!\n",
+                pattern.weight(), spam::wordlist::max_wordsize()));
+        }
+        return pattern;
     }
 
     config config::from_args(int argc, char** argv) {
@@ -49,15 +77,10 @@ namespace spam {
             " with the same name is created.");
         parse_options(parser, argc, argv);
 
-        auto inputs = std::vector<fs::path>{};
-        for (auto& in : input_files.Get()) {
-            auto resolved = resolve_wildcards(in);
-            std::copy(resolved.begin(), resolved.end(),
-                std::back_inserter(inputs));
-        }
-        ranges::sort(inputs);
-
-        return {inputs, outfile.Get(), patternflag.Get(), as_reads.Get()};
+        return {sanitize_inputs(input_files.Get()),
+            outfile.Get(),
+            parse_pattern(patternflag.Get()),
+            as_reads.Get()};
     }
 
 }
