@@ -79,9 +79,17 @@ private:
 		if (sequences.size() == 0) {
 			fmt::print(stderr, "Empty input path \"{}\".\n", path.string());
 		} else {
+			auto wordlengths = config.wordlengths;
+			if (wordlengths.empty()) {
+				auto k = (spam::wordlist::kmin(sequences) +
+					spam::wordlist::kmax(sequences)) / 2;
+				fmt::print("No k provided! Using k = {}!\n", k);
+				wordlengths.push_back(k);
+			}
 			auto const matrix = spam::distance_matrix(
 				std::move(sequences),
 				config.pattern,
+				wordlengths,
 				threadpool);
 			os << matrix;
 		}

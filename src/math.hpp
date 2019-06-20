@@ -3,34 +3,29 @@
 #include <numeric>
 #include <optional>
 
-template<class InputIt, class ResultType = typename InputIt::value_type>
-auto mean(InputIt first, InputIt last)
-	-> ResultType
+#include <range/v3/view.hpp>
+#include <range/v3/range/traits.hpp>
+
+template<class Range>
+auto mean(Range&& rng)
 {
-	return ResultType{1} / std::distance(first, last) *
-		std::accumulate(first, last, ResultType{0});
+	return ranges::range_value_t<Range>{1} / ranges::size(rng) *
+		ranges::accumulate(rng, ranges::range_value_t<Range>{0});
 }
 
-template<class ForwardIt1, class ForwardIt2,
-	class ResultType = std::common_type_t<
-		typename ForwardIt1::value_type,
-		typename ForwardIt2::value_type>>
-auto slope(ForwardIt1 x_first, ForwardIt1 x_last,
-	ForwardIt2 y_first, ForwardIt2 y_last)
-	-> std::optional<ResultType>
+template<class Range>
+auto slope(Range&& rng)
 {
-	if (std::distance(x_first, x_last) != std::distance(y_first, y_last)) {
-		return {};
-	}
-	auto const x_mean = mean(x_first, x_last);
-	auto const y_mean = mean(y_first, y_last);
+	using ResultType = std::decay_t<decltype(std::get<1>(*ranges::begin(rng)))>;
+	namespace rv = ranges::view;
+	auto const x_mean = mean(rng | rv::keys);
+	auto const y_mean = mean(rng | rv::values);
 	auto num = ResultType{0};
 	auto denom = ResultType{0};
-	auto x_it = x_first;
-	auto y_it = y_first;
-	for (; x_it != x_last; ++x_it, ++y_it){
-		num += (*x_it - x_mean) * (*y_it - y_mean);
-		denom += (*x_it - x_mean) * (*x_it - x_mean);
+	for (auto&& p : rng) {
+		auto const& [x, y] = p;
+		num += (x - x_mean) * (y - y_mean);
+		denom += (x - x_mean) * (x - x_mean);
 	}
-	return {num / denom};
+	return static_cast<ResultType>(num / denom);
 }

@@ -1,12 +1,16 @@
 #include "config.hpp"
 
 #include <fmt/format.h>
+#include <range/v3/action.hpp>
 #include <range/v3/algorithm.hpp>
+#include <range/v3/view.hpp>
 
 #include "args.hpp"
 #include "filesystem.hpp"
 
 namespace fs = std::filesystem;
+namespace ra = ranges::action;
+namespace rv = ranges::view;
 
 namespace spam {
 
@@ -56,6 +60,25 @@ namespace spam {
         return pattern;
     }
 
+    auto parse_wordlengths(std::string const& wordlengths)
+        -> std::vector<size_t>
+    {
+        return wordlengths
+            | rv::split(',')
+            | rv::transform(
+                [](auto&& rng) {
+                    return std::string(&*rng.begin(),
+                        ranges::distance(rng.begin(), rng.end()));
+                })
+            | rv::transform(
+                [](auto&& length) {
+                    return std::stoi(length);
+                })
+            | ranges::to<std::vector<size_t>>()
+            | ra::sort
+            | ra::unique;
+    }
+
     config config::from_args(int argc, char** argv) {
         args::ArgumentParser parser("Slope-SpaM");
         args::ValueFlag<std::string> outfile(parser, "output file",
@@ -65,6 +88,10 @@ namespace spam {
             "The binary word pattern used to create wordlists from sequences. "
             "May only include \'0\' and \'1\' characters.",
             {'p', "pattern"}, "111111111111111111111111111111111111");
+        args::ValueFlag<std::string> wordlengths(parser, "word lengths",
+            "Comma-separated list of wordlengths to consider when calculating"
+            " the distance between two sequences.",
+            {'k', "kmer-lengths"}, "");
         args::Flag as_reads(parser, "multi-fasta as reads",
             "Use sequences from multi-fasta files as reads of one sequence "
             "instead of multiple sequences.",
@@ -80,7 +107,8 @@ namespace spam {
         return {sanitize_inputs(input_files.Get()),
             outfile.Get(),
             parse_pattern(patternflag.Get()),
-            as_reads.Get()};
+            as_reads.Get(),
+            parse_wordlengths(wordlengths.Get())};
     }
 
 }

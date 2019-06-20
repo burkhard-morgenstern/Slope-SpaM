@@ -29,6 +29,7 @@ namespace spam {
         std::string out;
         spam::pattern pattern;
         bool multi_fasta_as_reads;
+        std::vector<size_t> wordlengths;
 
         static config from_args(int argc, char** argv);
     };

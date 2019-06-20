@@ -1,3 +1,5 @@
+#pragma once
+
 #include <filesystem>
 #include <iosfwd>
 #include <string>
@@ -113,6 +115,16 @@ public:
 	static auto max_wordsize()
 		-> size_t;
 
+	static auto kmin(sequence const&)
+		-> size_t;
+	static auto kmin(std::vector<sequence> const&)
+		-> size_t;
+
+	static auto kmax(sequence const&)
+		-> size_t;
+	static auto kmax(std::vector<sequence> const&)
+		-> size_t;
+
 public:
 	wordlist(
 		spam::sequence const& sequence,
@@ -132,7 +144,7 @@ public:
 class distance_matrix {
 	std::vector<spam::sequence> sequences;
 	spam::pattern pattern;
-	size_t kmin, kmax;
+	std::vector<size_t> wordlengths;
 
 	std::vector<wordlist> wordlists;
 	std::vector<std::vector<double>> matrix;
@@ -143,6 +155,7 @@ public:
 	distance_matrix(
 		std::vector<spam::sequence> sequences,
 		spam::pattern pattern,
+		std::vector<size_t> wordlengths,
 		std::shared_ptr<ThreadPool> threadpool =
 			std::make_shared<ThreadPool>(std::thread::hardware_concurrency()));
 

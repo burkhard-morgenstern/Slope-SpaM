@@ -151,6 +151,32 @@ auto wordlist::max_wordsize()
     return 4 * sizeof(word_t) - 1;
 }
 
+auto wordlist::kmin(sequence const& seq)
+    -> size_t
+{
+    return std::ceil(std::log(seq.size()) / 0.87);
+}
+
+auto wordlist::kmin(std::vector<sequence> const& seqs)
+    -> size_t
+{
+    return ranges::max(
+        seqs | rv::transform([](auto&& seq) { return kmin(seq); }));
+}
+
+auto wordlist::kmax(sequence const& seq)
+    -> size_t
+{
+    return std::floor(std::log(seq.size()) / 0.63);
+}
+
+auto wordlist::kmax(std::vector<sequence> const& seqs)
+    -> size_t
+{
+    return ranges::min(
+        seqs | rv::transform([](auto&& seq) { return kmax(seq); }));
+}
+
 auto encode_sequence(std::string const& sequence)
     -> std::vector<int8_t>
 {
@@ -233,10 +259,12 @@ wordlist::wordlist(
 distance_matrix::distance_matrix(
     std::vector<spam::sequence> sequences,
     spam::pattern pattern,
+    std::vector<size_t> wordlengths,
     std::shared_ptr<ThreadPool> threadpool /* =
         std::make_shared<ThreadPool>(std::thread::hardware_concurrency()) */)
     : sequences(std::move(sequences)),
     pattern(pattern),
+    wordlengths(std::move(wordlengths)),
     threadpool(std::move(threadpool))
 {
     calculate();
@@ -271,13 +299,6 @@ void distance_matrix::initialize_matrix()
 
 void distance_matrix::create_wordlists()
 {
-    auto Lmax = std::max_element(
-        sequences.begin(), sequences.end(),
-        [](auto&& a, auto&& b) {
-            return a.size() < b.size();
-        })->size();
-    kmin = std::ceil(std::log(Lmax) / 0.87);
-    kmax = std::floor(std::log(Lmax) / 0.63);
     wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<spam::wordlist>>{};
     for (auto i = size_t{0}; i < sequences.size(); ++i) {
@@ -394,20 +415,28 @@ auto background_match_probability(
     return result;
 }
 
+template<class Range>
 auto calculate_distance(
-    size_t matches,
-    size_t k,
+    Range&& matches,
     size_t kmax,
     spam::sequence const& seq1,
     spam::sequence const& seq2)
     -> std::pair<double, double>
 {
-    auto length1 = seq1.size() - kmax + 1;
-    auto length2 = seq2.size() - kmax;
     auto q = background_match_probability(seq1, seq2);
-    long double dy = log(matches) - log(length1);
-    long double dx = k;
-    auto m = dy / dx;
+    auto lh = std::min(seq1.size() + 1, seq2.size());
+    auto values = matches
+        | rv::transform(
+            [&](auto&& p) {
+                auto [k, matches] = p;
+                return std::pair<double, double>(
+                    k, log(matches) - log(lh - kmax));
+            })
+        | ranges::to<std::vector<std::pair<double, double>>>();
+    if (values.size() == 1) {
+        values.emplace_back(0, 0);
+    }
+    auto m = slope(values);
     auto p = exp(m);
     auto d = -(3.0 / 4.0) * log(1 - (4.0 / 3.0) * (1 - p));
     return {p, d};
@@ -416,9 +445,15 @@ auto calculate_distance(
 auto distance_matrix::calculate_element(size_t i, size_t j) const
     -> std::pair<double, double>
 {
-    auto const k = (kmax + kmin) / 2;
-    auto const matches = calculate_matches(wordlists[i], wordlists[j], k);
-    return calculate_distance(matches, k, kmax, sequences[i], sequences[j]);
+    auto matches = wordlengths
+        | rv::transform(
+            [&](auto k) {
+                return std::make_pair(
+                    k, calculate_matches(wordlists[i], wordlists[j], k));
+            });
+    return calculate_distance(
+        matches, wordlist::kmax(sequences),
+        sequences[i], sequences[j]);
 }
 
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
