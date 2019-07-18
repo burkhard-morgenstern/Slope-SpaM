@@ -149,15 +149,14 @@ class distance_matrix {
 	std::vector<wordlist> wordlists;
 	std::vector<std::vector<double>> matrix;
 
-	std::shared_ptr<ThreadPool> threadpool;
+	std::optional<std::shared_ptr<ThreadPool>> threadpool;
 
 public:
 	distance_matrix(
 		std::vector<spam::sequence> sequences,
 		spam::pattern pattern,
 		std::vector<size_t> wordlengths,
-		std::shared_ptr<ThreadPool> threadpool =
-			std::make_shared<ThreadPool>(std::thread::hardware_concurrency()));
+		std::optional<std::shared_ptr<ThreadPool>> threadpool = {});
 
 	auto size() const
 		-> size_t;
@@ -170,7 +169,11 @@ private:
 
 	void initialize_matrix();
 	void create_wordlists();
+	void create_wordlists_seq();
+	void create_wordlists_par();
 	void calculate_matrix();
+	void calculate_matrix_seq();
+	void calculate_matrix_par();
 
 	auto calculate_element(size_t i, size_t j) const
 		-> std::pair<double, double>;

@@ -260,8 +260,7 @@ distance_matrix::distance_matrix(
     std::vector<spam::sequence> sequences,
     spam::pattern pattern,
     std::vector<size_t> wordlengths,
-    std::shared_ptr<ThreadPool> threadpool /* =
-        std::make_shared<ThreadPool>(std::thread::hardware_concurrency()) */)
+    std::optional<std::shared_ptr<ThreadPool>> threadpool /* = {} */)
     : sequences(std::move(sequences)),
     pattern(pattern),
     wordlengths(std::move(wordlengths)),
@@ -299,10 +298,28 @@ void distance_matrix::initialize_matrix()
 
 void distance_matrix::create_wordlists()
 {
+    if (!threadpool) {
+        create_wordlists_seq();
+    } else {
+        create_wordlists_par();
+    }
+}
+
+void distance_matrix::create_wordlists_seq()
+{
     wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<spam::wordlist>>{};
     for (auto i = size_t{0}; i < sequences.size(); ++i) {
-        results.push_back(threadpool->enqueue([&, i = i]() {
+        wordlists.emplace_back(sequences[i], pattern);
+    }
+}
+
+void distance_matrix::create_wordlists_par()
+{
+    wordlists.reserve(sequences.size());
+    auto results = std::vector<std::future<spam::wordlist>>{};
+    for (auto i = size_t{0}; i < sequences.size(); ++i) {
+        results.push_back((*threadpool)->enqueue([&, i = i]() {
             return spam::wordlist(sequences[i], pattern);
         }));
     }
@@ -313,11 +330,31 @@ void distance_matrix::create_wordlists()
 
 void distance_matrix::calculate_matrix()
 {
+    if (!threadpool) {
+        calculate_matrix_seq();
+    } else {
+        calculate_matrix_par();
+    }
+}
+
+void distance_matrix::calculate_matrix_seq()
+{
+    for (size_t i = 0; i < sequences.size() - 1; i++) {
+        for (size_t j = i + 1; j < sequences.size(); j++) {
+            auto const [probability, distance] = calculate_element(i, j);
+            matrix[i][j] = distance;
+            matrix[j][i] = distance;
+        }
+    }
+}
+
+void distance_matrix::calculate_matrix_par()
+{
     auto results = std::vector<std::future<std::pair<double, double>>>{};
     for (size_t i = 0; i < sequences.size() - 1; i++) {
         for (size_t j = i + 1; j < sequences.size(); j++) {
             results.push_back(
-                threadpool->enqueue([&](size_t i, size_t j) {
+                (*threadpool)->enqueue([&](size_t i, size_t j) {
                     return calculate_element(i, j);
                 }, i, j)
             );
