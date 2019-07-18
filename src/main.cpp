@@ -26,24 +26,38 @@ public:
 			std::thread::hardware_concurrency()))
 	{}
 
+private:
+	auto output_path(fs::path const& input_path)
+		-> fs::path
+	{
+		return !fs::is_directory(input_path)
+			? fs::path{input_path}.replace_extension(".dmat")
+			: fs::path{input_path.string() + ".dir.dmat"};
+	}
+
+	auto input_output_mapping()
+	{
+		return config.in
+			| rv::transform(
+				[&](auto&& input_path) {
+					return std::make_pair(
+						input_path,
+						(config.out == "" || config.in.size() != 1)
+							? output_path(input_path)
+							: config.out);
+				});
+	}
+
+public:
 	auto exec()
 		-> int
 	{
-		auto threadpool = std::make_shared<ThreadPool>(
-			std::thread::hardware_concurrency());
-		if (config.out != "" && config.in.size() == 1) {
-			auto outfile = std::ofstream{config.out};
-			process(config.out, outfile);
-			outfile.close();
-		} else {
-			for (auto& input_path : config.in) {
-				auto output_path = !fs::is_directory(input_path)
-					? fs::path{input_path}.replace_extension(".dmat")
-					: fs::path{input_path.string() + ".dir.dmat"};
-				auto file = std::ofstream{output_path};
-				process(input_path, file);
-				file.close();
-			}
+		for (auto const& [input_path, output_path] : input_output_mapping()) {
+			auto file = std::ofstream{output_path};
+			fmt::print("Processing {} -> {}{}",
+				input_path.string(), output_path.string(), config.in.size() < 100 ? "\n" : "\r");
+			process(input_path, file);
+			file.close();
 		}
 
 		return 0;
@@ -101,5 +115,6 @@ int main (int argc, char** argv) {
 		return application{spam::config::from_args(argc, argv)}.exec();
 	} catch (spam::config_exception const& e) {
 		fmt::print(stderr, "{}", e.what());
+		return 1;
 	}
 }
