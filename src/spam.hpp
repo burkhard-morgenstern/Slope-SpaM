@@ -64,22 +64,22 @@ struct unassembled_sequence {
 
 struct assembled_sequence {
 	std::string name;
-	std::string bases;
+	std::string nucleotides;
 
 	auto size() const
 		-> size_t
 	{
-		return bases.size();
+		return nucleotides.size();
 	}
 
 	auto begin() const
 	{
-		return bases.begin();
+		return nucleotides.begin();
 	}
 
 	auto end() const
 	{
-		return bases.end();
+		return nucleotides.end();
 	}
 };
 

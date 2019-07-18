@@ -47,11 +47,11 @@ auto operator>>(std::istream& is, assembled_sequence& seq)
     -> std::istream&
 {
     std::getline(is, seq.name);
-    std::string bases;
-    std::getline(is, bases, '>');
-    bases.erase(std::remove_if(bases.begin(), bases.end(),
-        [](const char c) { return isspace(c); }), bases.end());
-    seq.bases = std::move(bases);
+    std::string nucleotides;
+    std::getline(is, nucleotides, '>');
+    nucleotides.erase(std::remove_if(nucleotides.begin(), nucleotides.end(),
+        [](const char c) { return isspace(c); }), nucleotides.end());
+    seq.nucleotides = std::move(nucleotides);
     return is;
 }
 
@@ -121,7 +121,7 @@ auto load_fasta_file(std::filesystem::path const& filename)
         result.name = filename.stem();
         result.reads.resize(reads.size());
         for (auto i = size_t{0}; i < reads.size(); ++i) {
-            result.reads[i] = std::move(reads[i].bases);
+            result.reads[i] = std::move(reads[i].nucleotides);
         }
         return {sequence{result}};
     }
@@ -245,7 +245,7 @@ wordlist::wordlist(
 {
     if (std::holds_alternative<assembled_sequence>(sequence)) {
         words = create_words(
-            std::get<assembled_sequence>(sequence).bases, pattern);
+            std::get<assembled_sequence>(sequence).nucleotides, pattern);
     } else {
         auto& reads = std::get<unassembled_sequence>(sequence).reads;
         for (auto& read : reads) {
@@ -389,7 +389,7 @@ auto count_nucleotide(spam::sequence const& sequence, char nucleotide)
     -> size_t
 {
     if (std::holds_alternative<assembled_sequence>(sequence)) {
-        return ranges::count(std::get<assembled_sequence>(sequence).bases, nucleotide);
+        return ranges::count(std::get<assembled_sequence>(sequence).nucleotides, nucleotide);
     } else {
         return ranges::accumulate(
             std::get<unassembled_sequence>(sequence).reads
