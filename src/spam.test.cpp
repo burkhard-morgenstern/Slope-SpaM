@@ -1,6 +1,22 @@
 #include "catch2/catch.hpp"
 
+#include <range/v3/view.hpp>
+
 #include "spam.hpp"
+
+namespace rv = ranges::view;
+
+template<class Range>
+auto shifted_words(Range&& words, size_t pattern_weight)
+    -> std::vector<spam::word_t>
+{
+    return words
+        | rv::transform(
+            [pattern_weight = pattern_weight](auto&& word) {
+                return word << (8 * sizeof(spam::word_t) - 2 * pattern_weight);
+            })
+        | ranges::to<std::vector<spam::word_t>>();
+}
 
 TEST_CASE("pattern") {
     SECTION("simple pattern") {
@@ -60,23 +76,32 @@ TEST_CASE("wordlist") {
     SECTION("simple pattern") {
         auto sequence = spam::sequence{spam::assembled_sequence{"", "ACGTACG"}};
         auto pattern = spam::pattern{"1111"};
-        auto expected = std::vector<size_t>{0x1B, 0x6C, 0xB1, 0xC6};
+        auto expected = shifted_words(std::vector<spam::word_t>{0x1B, 0x6C, 0xB1, 0xC6}, 4);
         auto wordlist = spam::wordlist{sequence, pattern};
         REQUIRE(std::equal(wordlist.begin(), wordlist.end(), expected.begin()));
     }
     SECTION("complex pattern") {
         auto sequence = spam::sequence{spam::assembled_sequence{"", "AACCGGTTAA"}};
         auto pattern = spam::pattern{"1010101"};
-        auto expected = std::vector<size_t>{0x1B, 0x1B, 0x6C, 0x6C};
+        auto expected = shifted_words(std::vector<spam::word_t>{0x1B, 0x1B, 0x6C, 0x6C}, 4);
         auto wordlist = spam::wordlist{sequence, pattern};
         REQUIRE(std::equal(wordlist.begin(), wordlist.end(), expected.begin()));
     }
     SECTION("sorting") {
         auto sequence = spam::sequence{spam::assembled_sequence{"", "TGCATGCATGC"}};
         auto pattern = spam::pattern{"1111"};
-        auto expected = std::vector<size_t>{
-            0x39, 0x39, 0x4E, 0x4E, 0x93, 0x93, 0xE4, 0xE4};
+        auto expected = shifted_words(std::vector<spam::word_t>{
+            0x39, 0x39, 0x4E, 0x4E, 0x93, 0x93, 0xE4, 0xE4}, 4);
         auto wordlist = spam::wordlist{sequence, pattern};
         REQUIRE(std::equal(wordlist.begin(), wordlist.end(), expected.begin()));
+    }
+    SECTION("reduction") {
+        auto sequence = spam::sequence{spam::assembled_sequence{"", "TGCATGCATGCA"}};
+        auto pattern = spam::pattern{"11111"};
+        auto expected = shifted_words(std::vector<spam::word_t>{
+            0x39, 0x39, 0x4E, 0x4E, 0x93, 0x93, 0xE4, 0xE4}, 4);
+        auto wordlist = spam::wordlist{sequence, pattern};
+        auto reduced = wordlist.reduce(4);
+        REQUIRE(std::equal(reduced.begin(), reduced.end(), expected.begin()));
     }
 }

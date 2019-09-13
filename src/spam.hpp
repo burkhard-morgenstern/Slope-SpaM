@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 
+#include <range/v3/view/transform.hpp>
+
 #include <threadpool/ThreadPool.h>
 
 namespace spam {
@@ -138,6 +140,17 @@ public:
 	auto end() const
 	{
 		return words.end();
+	}
+
+	auto reduce(size_t k) const
+	{
+		auto reduction_pattern = std::numeric_limits<word_t>::max();
+		reduction_pattern <<= 8 * sizeof(word_t) - 2 * k;
+		return *this
+			| ranges::view::transform(
+				[reduction_pattern = reduction_pattern](auto word) {
+					return word & reduction_pattern;
+				});
 	}
 };
 

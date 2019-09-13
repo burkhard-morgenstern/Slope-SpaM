@@ -371,25 +371,14 @@ void distance_matrix::calculate_matrix_par()
     }
 }
 
-auto reduce_wordlist(spam::wordlist const& wordlist, size_t k)
-{
-    auto reduction_pattern = std::numeric_limits<word_t>::max();
-    reduction_pattern <<= 8 * sizeof(word_t) - 2 * k;
-    return wordlist
-        | rv::transform(
-            [&wordlist, reduction_pattern = reduction_pattern](auto word) {
-                return word & reduction_pattern;
-            });
-}
-
 auto calculate_matches(
     spam::wordlist const& _wordlist1,
     spam::wordlist const& _wordlist2,
     size_t k)
     -> size_t
 {
-    auto wordlist1 = reduce_wordlist(_wordlist1, k);
-    auto wordlist2 = reduce_wordlist(_wordlist2, k);
+    auto wordlist1 = _wordlist1.reduce(k);
+    auto wordlist2 = _wordlist2.reduce(k);
 
     size_t count = 0;
     auto next_fn = [](auto it, auto&& wordlist) {
