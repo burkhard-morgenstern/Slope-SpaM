@@ -40,10 +40,6 @@ namespace spam {
                 std::back_inserter(results));
         }
 
-        if (results.size() == 0) {
-            throw config_exception("No input files!\n");
-        }
-
         return results;
     }
 
@@ -104,7 +100,7 @@ namespace spam {
             " with the same name is created.");
         parse_options(parser, argc, argv);
 
-        return {sanitize_inputs(input_files.Get()),
+        return {sanitize_inputs(input_files.Get()) | ra::sort,
             outfile.Get(),
             parse_pattern(patternflag.Get()),
             as_reads.Get(),

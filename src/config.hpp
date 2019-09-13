@@ -26,7 +26,7 @@ namespace spam {
 
     struct config {
         std::vector<std::filesystem::path> in;
-        std::string out;
+        std::filesystem::path out;
         spam::pattern pattern;
         bool multi_fasta_as_reads;
         std::vector<size_t> wordlengths;

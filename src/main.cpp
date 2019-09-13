@@ -1,12 +1,15 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <numeric>
 #include <optional>
 #include <vector>
 
 #include <fmt/format.h>
+#include <range/v3/algorithm.hpp>
+#include <range/v3/iterator.hpp>
 #include <range/v3/view.hpp>
 
 #include "config.hpp"
@@ -52,11 +55,31 @@ public:
 	auto exec()
 		-> int
 	{
-		for (auto const& [input_path, output_path] : input_output_mapping()) {
-			auto file = std::ofstream{output_path};
-			fmt::print("Processing {} -> {}{}",
-				input_path.string(), output_path.string(), config.in.size() < 100 ? "\n" : "\r");
-			process(input_path, file);
+		if (!config.multi_fasta_as_reads) {
+			for (auto const& [input_path, output_path] : input_output_mapping()) {
+				fmt::print("Processing {} -> {}{}",
+					input_path.string(), output_path.string(), config.in.size() < 100 ? "\n" : "\r");
+				auto sequences = load_sequences(input_path);
+				if (sequences.size() == 0) {
+					fmt::print(stderr, "Empty input path \"{}\".\n", input_path.string());
+				} else {
+					auto file = std::ofstream{output_path};
+					file << process(sequences);
+					file.close();
+				}
+			}
+		} else {
+			fmt::print("Processing ");
+			ranges::copy(config.in, ranges::ostream_joiner(std::cout, ' '));
+			fmt::print(" -> {}\n", config.out.string());
+			auto sequences = config.in
+				| rv::transform(
+					[&](auto&& input_path) {
+						return *spam::load_fasta_file(input_path);
+					})
+				| ranges::to<std::vector<spam::sequence>>();
+			auto file = std::ofstream{config.out};
+			file << process(sequences);
 			file.close();
 		}
 
@@ -84,29 +107,21 @@ private:
 		}
 	}
 
-	auto process(fs::path const& path, std::ostream& os)
-		-> void
+	auto process(std::vector<spam::sequence> const& sequences)
+		-> spam::distance_matrix
 	{
-		fmt::print("Processing {}...\n", path.string());
-		fflush(stdout);
-		auto sequences = load_sequences(path);
-		if (sequences.size() == 0) {
-			fmt::print(stderr, "Empty input path \"{}\".\n", path.string());
-		} else {
-			auto wordlengths = config.wordlengths;
-			if (wordlengths.empty()) {
-				auto k = (spam::wordlist::kmin(sequences) +
-					spam::wordlist::kmax(sequences)) / 2;
-				fmt::print("No k provided! Using k = {}!\n", k);
-				wordlengths.push_back(k);
-			}
-			auto const matrix = spam::distance_matrix(
-				std::move(sequences),
-				config.pattern,
-				wordlengths,
-				threadpool);
-			os << matrix;
+		auto wordlengths = config.wordlengths;
+		if (wordlengths.empty()) {
+			wordlengths.push_back(spam::wordlist::kmin(sequences));
+			wordlengths.push_back(spam::wordlist::kmax(sequences));
 		}
+		size_t kmax = *ranges::max_element(wordlengths);
+		auto pattern = config.pattern;
+		return spam::distance_matrix(
+			std::move(sequences),
+			pattern,
+			wordlengths,
+			threadpool);
 	}
 };
 

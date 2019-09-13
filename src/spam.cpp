@@ -6,6 +6,7 @@
 #include <thread>
 
 #include <range/v3/algorithm.hpp>
+#include <range/v3/iterator.hpp>
 #include <range/v3/numeric.hpp>
 #include <range/v3/view.hpp>
 
@@ -78,6 +79,24 @@ auto sequence::size() const
                         return read.size();
                     }),
             size_t{0});
+    }
+}
+
+auto sequence::adjusted_size(size_t wordlength) const
+    -> size_t
+{
+    if (std::holds_alternative<assembled_sequence>(*this)) {
+        return std::get<assembled_sequence>(*this).size() - wordlength;
+    } else {
+        auto& seq = std::get<unassembled_sequence>(*this);
+        return ranges::accumulate(
+            seq.reads
+                | rv::transform(
+                    [](auto&& read) {
+                        return read.size();
+                    }),
+            size_t{0}) -
+            seq.reads.size() * wordlength;
     }
 }
 
@@ -235,6 +254,7 @@ auto create_words(std::string const& sequence, spam::pattern const& pattern)
     {
         words.push_back(create_word(it, pattern));
     }
+    words.erase(std::remove_if(words.begin(), words.end(), [](auto const& word) { return word == std::numeric_limits<word_t>::max(); }), words.end());
     return words;
 }
 
@@ -298,6 +318,8 @@ void distance_matrix::initialize_matrix()
 
 void distance_matrix::create_wordlists()
 {
+    auto max_wordlength = *ranges::max_element(wordlengths);
+    pattern = pattern.reduce(max_wordlength);
     if (!threadpool) {
         create_wordlists_seq();
     } else {
@@ -310,7 +332,7 @@ void distance_matrix::create_wordlists_seq()
     wordlists.reserve(sequences.size());
     auto results = std::vector<std::future<spam::wordlist>>{};
     for (auto i = size_t{0}; i < sequences.size(); ++i) {
-        wordlists.emplace_back(sequences[i], pattern);
+        wordlists.push_back(spam::wordlist(sequences[i], pattern));
     }
 }
 
@@ -395,9 +417,7 @@ auto calculate_matches(
         auto const v1 = *it1;
         auto const v2 = *it2;
         if (v1 == v2) {
-            count += std::min(
-                std::distance(it1, next1),
-                std::distance(it2, next2));
+            count += std::distance(it1, next1) * std::distance(it2, next2);
         }
         if (v1 <= v2) {
             it1 = next1;
@@ -449,18 +469,16 @@ auto calculate_distance(
     spam::sequence const& seq2)
     -> std::pair<double, double>
 {
-    auto q = background_match_probability(seq1, seq2);
-    auto lh = std::min(seq1.size() + 1, seq2.size());
+    auto q = 0.25;
     auto values = matches
         | rv::transform(
             [&](auto&& p) {
                 auto [k, matches] = p;
-                return std::pair<double, double>(
-                    k, log(matches) - log(lh - kmax));
+                long double e = pow(q, k) * seq1.adjusted_size(k) * seq2.adjusted_size(k);
+                return std::pair<long double, long double>(k, log(matches - e));
             })
-        | ranges::to<std::vector<std::pair<double, double>>>();
-    if (values.size() == 1) {
-        values.emplace_back(0, 0);
+        | ranges::to<std::vector<std::pair<long double, long double>>>();
+
     }
     auto m = slope(values);
     auto p = exp(m);
@@ -477,8 +495,9 @@ auto distance_matrix::calculate_element(size_t i, size_t j) const
                 return std::make_pair(
                     k, calculate_matches(wordlists[i], wordlists[j], k));
             });
+    auto kmax = *ranges::max_element(wordlengths);
     return calculate_distance(
-        matches, wordlist::kmax(sequences),
+        matches, kmax,
         sequences[i], sequences[j]);
 }
 

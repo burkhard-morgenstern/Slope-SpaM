@@ -91,10 +91,20 @@ auto operator>>(std::istream& is, assembled_sequence& seq)
 struct sequence
 	: public std::variant<unassembled_sequence, assembled_sequence>
 {
+	sequence(unassembled_sequence seq)
+		: std::variant<unassembled_sequence, assembled_sequence>{seq}
+	{};
+	sequence(assembled_sequence seq)
+		: std::variant<unassembled_sequence, assembled_sequence>{seq}
+	{};
+
 	auto name() const
 		-> std::string;
 
 	auto size() const
+		-> size_t;
+
+	auto adjusted_size(size_t wordlength) const
 		-> size_t;
 };
 
@@ -131,6 +141,11 @@ public:
 	wordlist(
 		spam::sequence const& sequence,
 		spam::pattern pattern);
+
+	auto size() const
+	{
+		return words.size();
+	}
 
 	auto begin() const
 	{
