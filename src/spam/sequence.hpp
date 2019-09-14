@@ -12,6 +12,7 @@ namespace spam {
 struct unassembled_sequence {
 	std::string name;
 	std::vector<std::string> reads;
+	long double error_rate;
 };
 
 struct assembled_sequence {
@@ -56,6 +57,9 @@ struct sequence
 
 	auto adjusted_size(size_t wordlength) const
 		-> size_t;
+
+	auto error_rate() const
+		-> long double;
 };
 
 auto load_directory(std::filesystem::path const& path)

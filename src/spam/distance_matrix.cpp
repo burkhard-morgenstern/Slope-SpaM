@@ -214,8 +214,8 @@ auto calculate_distance(
             })
         | ranges::to<std::vector<std::pair<long double, long double>>>();
     auto m = slope(values);
-    auto p = exp(m) / 0.99520576;
-    auto d = -(3.0 / 4.0) * log(1 - (4.0 / 3.0) * (1 - p));
+    auto p = exp(m) / ((1.0 - seq1.error_rate()) * (1.0 - seq2.error_rate()));
+    auto d = -(3.0 / 4.0) * log(1.0 - (4.0 / 3.0) * (1.0 - p));
     return {p, d};
 }
 

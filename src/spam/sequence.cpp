@@ -66,6 +66,16 @@ auto sequence::adjusted_size(size_t wordlength) const
     }
 }
 
+auto sequence::error_rate() const
+    -> long double
+{
+    if (std::holds_alternative<assembled_sequence>(*this)) {
+        return 0;
+    } else {
+        return std::get<unassembled_sequence>(*this).error_rate;
+    }
+}
+
 auto load_directory(fs::path const& path)
     -> std::optional<std::vector<sequence>>
 {
@@ -105,6 +115,7 @@ auto load_fasta_file(fs::path const& filename)
         auto result = unassembled_sequence{};
         result.name = filename.stem();
         result.reads.resize(reads.size());
+        result.error_rate = 0.0024;
         for (auto i = size_t{0}; i < reads.size(); ++i) {
             result.reads[i] = std::move(reads[i].nucleotides);
         }
