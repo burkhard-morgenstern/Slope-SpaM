@@ -200,7 +200,6 @@ auto background_match_probability(
 template<class Range>
 auto calculate_distance(
     Range&& matches,
-    size_t kmax,
     spam::sequence const& seq1,
     spam::sequence const& seq2)
     -> std::pair<double, double>
@@ -230,9 +229,7 @@ auto distance_matrix::calculate_element(size_t i, size_t j) const
                     k, calculate_matches(wordlists[i], wordlists[j], k));
             });
     auto kmax = *ranges::max_element(wordlengths);
-    return calculate_distance(
-        matches, kmax,
-        sequences[i], sequences[j]);
+    return calculate_distance(matches, sequences[i], sequences[j]);
 }
 
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
