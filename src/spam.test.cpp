@@ -2,7 +2,7 @@
 
 #include <range/v3/view.hpp>
 
-#include "spam.hpp"
+#include "spam/distance_matrix.hpp"
 
 namespace rv = ranges::view;
 

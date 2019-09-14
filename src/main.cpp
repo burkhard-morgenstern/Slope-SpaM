@@ -13,7 +13,7 @@
 #include <range/v3/view.hpp>
 
 #include "config.hpp"
-#include "spam.hpp"
+#include "spam/distance_matrix.hpp"
 
 namespace fs = std::filesystem;
 namespace rv = ranges::view;

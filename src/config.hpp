@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include "spam.hpp"
+#include "spam/pattern.hpp"
 
 namespace spam {
 

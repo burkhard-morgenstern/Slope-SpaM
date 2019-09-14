@@ -17,7 +17,10 @@ include_directories(
 )
 
 add_library(slope-spam-common OBJECT
-    src/spam.cpp
+    src/spam/distance_matrix.cpp
+    src/spam/pattern.cpp
+    src/spam/sequence.cpp
+    src/spam/wordlist.cpp
 )
 
 add_executable(slope-spam

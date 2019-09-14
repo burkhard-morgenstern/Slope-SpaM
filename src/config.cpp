@@ -7,6 +7,7 @@
 
 #include "args.hpp"
 #include "filesystem.hpp"
+#include "spam/wordlist.hpp"
 
 namespace fs = std::filesystem;
 namespace ra = ranges::action;
