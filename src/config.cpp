@@ -1,17 +1,13 @@
 #include "config.hpp"
 
 #include <fmt/format.h>
-#include <range/v3/action.hpp>
-#include <range/v3/algorithm.hpp>
-#include <range/v3/view.hpp>
 
 #include "args.hpp"
 #include "filesystem.hpp"
 #include "spam/wordlist.hpp"
+#include "string.hpp"
 
 namespace fs = std::filesystem;
-namespace ra = ranges::action;
-namespace rv = ranges::view;
 
 namespace spam {
 
@@ -60,20 +56,18 @@ namespace spam {
     auto parse_wordlengths(std::string const& wordlengths)
         -> std::vector<size_t>
     {
-        return wordlengths
-            | rv::split(',')
-            | rv::transform(
-                [](auto&& rng) {
-                    return std::string(&*rng.begin(),
-                        ranges::distance(rng.begin(), rng.end()));
-                })
-            | rv::transform(
-                [](auto&& length) {
-                    return std::stoi(length);
-                })
-            | ranges::to<std::vector<size_t>>()
-            | ra::sort
-            | ra::unique;
+        auto splitted = split(wordlengths, ',');
+        auto result = std::vector<size_t>{};
+        std::transform(splitted.begin(), splitted.end(),
+            std::back_inserter(result),
+            [](auto&& length) {
+                return std::stoi(length);
+            });
+        std::sort(result.begin(), result.end());
+        result.erase(
+            std::unique(result.begin(), result.end()),
+            result.end());
+        return result;
     }
 
     config config::from_args(int argc, char** argv) {
@@ -101,7 +95,9 @@ namespace spam {
             " with the same name is created.");
         parse_options(parser, argc, argv);
 
-        return {sanitize_inputs(input_files.Get()) | ra::sort,
+        auto inputs = sanitize_inputs(input_files.Get());
+        std::sort(inputs.begin(), inputs.end());
+        return {inputs,
             outfile.Get(),
             parse_pattern(patternflag.Get()),
             as_reads.Get(),

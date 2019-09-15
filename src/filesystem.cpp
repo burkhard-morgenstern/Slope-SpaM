@@ -1,25 +1,8 @@
 #include "filesystem.hpp"
 
-#include <range/v3/algorithm.hpp>
-#include <range/v3/view.hpp>
+#include "string.hpp"
 
 namespace fs = std::filesystem;
-namespace rv = ranges::view;
-
-auto split(std::string const& s, char seperator)
-	-> std::vector<std::string>
-{
-	auto output = std::vector<std::string>{};
-	auto prev_pos = size_t{0};
-	auto pos = size_t{0};
-	while((pos = s.find(seperator, pos)) != std::string::npos) {
-		auto substring = s.substr(prev_pos, pos - prev_pos);
-		output.push_back(substring);
-		prev_pos = ++pos;
-	}
-	output.push_back(s.substr(prev_pos, pos - prev_pos));
-	return output;
-}
 
 auto regex_escape(std::string const& regex_string)
     -> std::string
@@ -43,39 +26,40 @@ auto regex_escape(std::string const& regex_string)
 }
 
 auto components(std::filesystem::path const& path)
+    -> std::vector<std::string>
 {
-    auto path_str = std::string{path};
-    return path_str
-		| ranges::view::split('/')
-		| ranges::view::transform(
-			[](auto&& rng) {
-            	return std::string{
-                    std::string_view(&*rng.begin(), ranges::distance(rng))};
-			})
-		| ranges::view::remove_if(
-			[](auto&& str) { return str == ""; })
-        | ranges::to<std::vector<std::string>>();
+    auto components = split(path, '/');
+    components.erase(
+        std::remove_if(components.begin(), components.end(),
+            [](auto& component) { return component == ""; }),
+        components.end());
+    return components;
 }
 
 auto children(std::filesystem::path const& directory)
+    -> std::vector<std::filesystem::path>
 {
-    return std::filesystem::directory_iterator(directory)
-        | ranges::view::transform(
-            [](auto&& entry) {
-                return entry.path();
-            });
+    auto result = std::vector<fs::path>{};
+    for (auto& entry : std::filesystem::directory_iterator(directory)) {
+        result.push_back(entry.path());
+    }
+    return result;
 }
 
 auto matching_children(
     std::filesystem::path const& directory,
     std::regex const& component_regex)
+    -> std::vector<std::filesystem::path>
 {
-    return children(directory)
-        | ranges::view::remove_if(
-            [&component_regex](auto&& path) { 
+    auto result = children(directory);
+    result.erase(
+        std::remove_if(result.begin(), result.end(),
+            [&component_regex](auto& path) { 
                 return !std::regex_match(
                     path.string(), component_regex);
-            });
+            }),
+        result.end());
+    return result;
 }
 
 template<class Range>
@@ -84,13 +68,12 @@ auto all_matching_children(
     std::regex const& component_regex)
     -> std::vector<fs::path>
 {
-    return directories
-        | rv::transform(
-            [&component_regex](auto&& path) {
-                return matching_children(path, component_regex);
-            })
-        | rv::join
-        | ranges::to<std::vector<fs::path>>();
+    auto result = std::vector<fs::path>{};
+    for (auto& directory : directories) {
+        auto matching = matching_children(directory, component_regex);
+        std::copy(matching.begin(), matching.end(), std::back_inserter(result));
+    }
+    return result;
 }
 
 template<class Range>
@@ -99,55 +82,64 @@ auto all_matching_children(
     std::string const& component)
     -> std::vector<fs::path>
 {
-    return directories
-        | rv::transform(
-            [&component](auto&& path) {
-                return path / component;
-            })
-        | rv::remove_if(
+    auto result = std::vector<fs::path>{};
+    result.reserve(directories.size());
+    std::transform(directories.begin(), directories.end(),
+        std::back_inserter(result),
+        [&component](auto&& directory) {
+            return directory / component;
+        });
+    result.erase(
+        std::remove_if(result.begin(), result.end(),
             [](auto&& path) {
                 return !fs::exists(path);;
-            })
-        | ranges::to<std::vector<fs::path>>();
+            }),
+        result.end());
+    return result;
 }
 
 auto subdirectories(std::filesystem::path const& directory)
 {
-    return children(directory)
-        | ranges::view::remove_if(
+    auto result = children(directory);
+    result.erase(
+        std::remove_if(result.begin(), result.end(),
             [](auto&& path) {
                 return !std::filesystem::is_directory(path);
-            });
+            }),
+        result.end());
+    return result;
 }
 
 template<class Range>
 auto all_subdirectories(Range&& paths)
     -> std::vector<fs::path>
 {
-    return paths
-        | rv::transform(
-            [](auto&& path) {
-                return subdirectories(path);
-            })
-        | rv::join
-        | ranges::to<std::vector<fs::path>>();
+    auto result = std::vector<fs::path>{};
+    for (auto& path : paths) {
+        auto subdirs = subdirectories(path);
+        std::copy(subdirs.begin(), subdirs.end(), std::back_inserter(result));
+    }
+    return result;
 }
 
 auto resolve_wildcards(std::string const& wildcard_path)
 	-> std::vector<fs::path>
 {
-	if (ranges::count(wildcard_path, '*') == 0) {
+	if (std::count(wildcard_path.begin(), wildcard_path.end(), '*') == 0) {
 		return {wildcard_path};
 	}
 	auto const _components = components(wildcard_path);
-	if (ranges::empty(_components)) {
+	if (std::empty(_components)) {
 		return {};
 	}
 	auto paths = std::vector<fs::path>{"."};
 	for (auto const component : _components) {
-        auto existing_paths = paths
-			| rv::remove_if([](auto&& path) { return !fs::exists(path); });
-        auto const count = ranges::count(component, '*');
+        auto existing_paths = paths;
+	    existing_paths.erase(
+            std::remove_if(existing_paths.begin(), existing_paths.end(),
+                [](auto&& path) { return !fs::exists(path); }),
+            existing_paths.end());
+        auto const count = std::count(component.begin(), component.end(), '*');
         if (count == 2 && component == "**") {
             paths = all_subdirectories(existing_paths);
         } else {

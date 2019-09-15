@@ -1,12 +1,9 @@
 #include "sequence.hpp"
 
+#include <algorithm>
 #include <fstream>
 
-#include <range/v3/numeric.hpp>
-#include <range/v3/view.hpp>
-
 namespace fs = std::filesystem;
-namespace rv = ranges::view;
 
 namespace spam {
 
@@ -38,13 +35,12 @@ auto sequence::size() const
     if (std::holds_alternative<assembled_sequence>(*this)) {
         return std::get<assembled_sequence>(*this).size();
     } else {
-        return ranges::accumulate(
-            std::get<unassembled_sequence>(*this).reads
-                | rv::transform(
-                    [](auto&& read) {
-                        return read.size();
-                    }),
-            size_t{0});
+        auto& seq = std::get<unassembled_sequence>(*this);
+        auto result = size_t{0};
+        for (auto& read : seq.reads) {
+            result += read.size();
+        }
+        return result;
     }
 }
 
@@ -52,17 +48,10 @@ auto sequence::adjusted_size(size_t wordlength) const
     -> size_t
 {
     if (std::holds_alternative<assembled_sequence>(*this)) {
-        return std::get<assembled_sequence>(*this).size() - wordlength;
+        return size() - wordlength;
     } else {
         auto& seq = std::get<unassembled_sequence>(*this);
-        return ranges::accumulate(
-            seq.reads
-                | rv::transform(
-                    [](auto&& read) {
-                        return read.size();
-                    }),
-            size_t{0}) -
-            seq.reads.size() * wordlength;
+        return size() - seq.reads.size() * wordlength;
     }
 }
 
@@ -74,6 +63,36 @@ auto sequence::error_rate() const
     } else {
         return std::get<unassembled_sequence>(*this).error_rate;
     }
+}
+
+auto count_nucleotide(spam::sequence const& sequence, char nucleotide)
+    -> size_t
+{
+    if (std::holds_alternative<assembled_sequence>(sequence)) {
+        auto& nucleotides = std::get<assembled_sequence>(sequence).nucleotides;
+        return std::count(nucleotides.begin(), nucleotides.end(), nucleotide);
+    } else {
+        auto& seq = std::get<unassembled_sequence>(sequence);
+        auto result = size_t{0};
+        for (auto& read : seq.reads) {
+            result += std::count(read.begin(), read.end(), nucleotide);
+        }
+        return result;
+    }
+}
+
+auto background_match_probability(
+    spam::sequence const& seq1,
+    spam::sequence const& seq2)
+    -> double
+{
+    auto result = 0.0;
+    for (auto c : {'A', 'C', 'G', 'T'}) {
+        result +=
+            1.0 * count_nucleotide(seq1, c) / seq1.size()
+            * (1.0 * count_nucleotide(seq2, c) / seq2.size());
+    }
+    return result;
 }
 
 auto load_directory(fs::path const& path)

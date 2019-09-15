@@ -3,24 +3,23 @@
 #include <numeric>
 #include <optional>
 
-#include <range/v3/numeric.hpp>
-#include <range/v3/view.hpp>
-#include <range/v3/range/traits.hpp>
-
-template<class Range>
-auto mean(Range&& rng)
+template<class Range, class Proj>
+auto mean(Range&& rng, Proj proj = [](auto&& e) { return e; })
 {
-	return ranges::range_value_t<Range>{1} / ranges::size(rng) *
-		ranges::accumulate(rng, ranges::range_value_t<Range>{0});
+	using ResultType = std::decay_t<decltype(proj(*std::begin(rng)))>;
+	auto sum = ResultType{0};
+	for (auto& e : rng) {
+		sum += proj(e);
+	}
+	return ResultType{1} / rng.size() * sum;
 }
 
 template<class Range>
 auto slope(Range&& rng)
 {
-	using ResultType = std::decay_t<decltype(std::get<1>(*ranges::begin(rng)))>;
-	namespace rv = ranges::view;
-	auto const x_mean = mean(rng | rv::keys);
-	auto const y_mean = mean(rng | rv::values);
+	using ResultType = std::decay_t<decltype(std::get<1>(*std::begin(rng)))>;
+	auto const x_mean = mean(rng, [](auto& e) { return e.first; });
+	auto const y_mean = mean(rng, [](auto& e) { return e.second; });
 	auto num = ResultType{0};
 	auto denom = ResultType{0};
 	for (auto&& p : rng) {
@@ -28,5 +27,5 @@ auto slope(Range&& rng)
 		num += (x - x_mean) * (y - y_mean);
 		denom += (x - x_mean) * (x - x_mean);
 	}
-	return static_cast<ResultType>(num / denom);
+	return num / denom;
 }

@@ -1,12 +1,9 @@
 #include "wordlist.hpp"
 
 #include <algorithm>
-
-#include <range/v3/algorithm.hpp>
-#include <range/v3/view.hpp>
+#include <cmath>
 
 namespace fs = std::filesystem;
-namespace rv = ranges::view;
 
 namespace spam {
 
@@ -25,8 +22,11 @@ auto wordlist::kmin(sequence const& seq)
 auto wordlist::kmin(std::vector<sequence> const& seqs)
     -> size_t
 {
-    return ranges::max(
-        seqs | rv::transform([](auto&& seq) { return kmin(seq); }));
+    auto result = std::numeric_limits<size_t>::min();
+    for (auto& seq : seqs) {
+        result = std::max(result, kmin(seq));
+    }
+    return result;
 }
 
 auto wordlist::kmax(sequence const& seq)
@@ -38,8 +38,11 @@ auto wordlist::kmax(sequence const& seq)
 auto wordlist::kmax(std::vector<sequence> const& seqs)
     -> size_t
 {
-    return ranges::min(
-        seqs | rv::transform([](auto&& seq) { return kmax(seq); }));
+    auto result = std::numeric_limits<size_t>::max();
+    for (auto& seq : seqs) {
+        result = std::min(result, kmax(seq));
+    }
+    return result;
 }
 
 auto encode_sequence(std::string const& sequence)
@@ -124,6 +127,44 @@ wordlist::wordlist(
         }
     }
     std::sort(words.begin(), words.end());
+}
+
+auto calculate_matches(
+    spam::wordlist const& wordlist1,
+    spam::wordlist const& wordlist2,
+    size_t k)
+    -> size_t
+{
+    auto word_mask = std::numeric_limits<word_t>::max();
+    word_mask <<= 8 * sizeof(word_t) - 2 * k;
+
+    size_t count = 0;
+    auto next_fn = [word_mask](auto it, auto&& wordlist) {
+        return std::find_if_not(it, wordlist.end(),
+            [it, word_mask](auto const& p) {
+                return (p & word_mask) == ((*it) & word_mask);
+            });
+    };
+    auto it1 = wordlist1.begin();
+    auto next1 = next_fn(it1, wordlist1);
+    auto it2 = wordlist2.begin();
+    auto next2 = next_fn(it2, wordlist2);
+    while (it1 != wordlist1.end() && it2 != wordlist2.end()) {
+        auto const v1 = (*it1) & word_mask;
+        auto const v2 = (*it2) & word_mask;
+        if (v1 == v2) {
+            count += std::distance(it1, next1) * std::distance(it2, next2);
+        }
+        if (v1 <= v2) {
+            it1 = next1;
+            next1 = next_fn(it1, wordlist1);
+        }
+        if (v1 >= v2) {
+            it2 = next2;
+            next2 = next_fn(it2, wordlist2);
+        }
+    }
+    return count;
 }
 
 } // namespace spam

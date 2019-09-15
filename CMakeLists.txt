@@ -13,7 +13,6 @@ find_package(Threads)
 include_directories(
     ${CMAKE_SOURCE_DIR}/third_party
     ${CMAKE_SOURCE_DIR}/third_party/fmt/include
-    ${CMAKE_SOURCE_DIR}/third_party/rangev3/include
 )
 
 add_library(slope-spam-common OBJECT
@@ -21,6 +20,7 @@ add_library(slope-spam-common OBJECT
     src/spam/pattern.cpp
     src/spam/sequence.cpp
     src/spam/wordlist.cpp
+    src/string.cpp
 )
 
 add_executable(slope-spam
@@ -28,7 +28,6 @@ add_executable(slope-spam
     src/config.cpp
     src/filesystem.cpp
     src/main.cpp
-    src/math.cpp
 )
 
 target_link_libraries(slope-spam
@@ -40,7 +39,9 @@ target_link_libraries(slope-spam
 add_executable(slope-spam-test
     $<TARGET_OBJECTS:slope-spam-common>
     src/main.test.cpp
-    src/spam.test.cpp
+    src/string.test.cpp
+    src/spam/pattern.test.cpp
+    src/spam/wordlist.test.cpp
 )
 
 target_include_directories(slope-spam-test PRIVATE

@@ -62,6 +62,11 @@ struct sequence
 		-> long double;
 };
 
+auto background_match_probability(
+    spam::sequence const& sequence1,
+    spam::sequence const& sequence2)
+    -> double;
+
 auto load_directory(std::filesystem::path const& path)
 	-> std::optional<std::vector<sequence>>;
 

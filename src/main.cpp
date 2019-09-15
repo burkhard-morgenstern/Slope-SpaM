@@ -1,22 +1,17 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iostream>
 #include <map>
 #include <numeric>
 #include <optional>
 #include <vector>
 
 #include <fmt/format.h>
-#include <range/v3/algorithm.hpp>
-#include <range/v3/iterator.hpp>
-#include <range/v3/view.hpp>
 
 #include "config.hpp"
 #include "spam/distance_matrix.hpp"
 
 namespace fs = std::filesystem;
-namespace rv = ranges::view;
 
 class application {
 	spam::config config;
@@ -40,15 +35,18 @@ private:
 
 	auto input_output_mapping()
 	{
-		return config.in
-			| rv::transform(
-				[&](auto&& input_path) {
-					return std::make_pair(
-						input_path,
-						(config.out == "" || config.in.size() != 1)
-							? output_path(input_path)
-							: config.out);
-				});
+		auto result = std::vector<std::pair<fs::path, fs::path>>{};
+		result.reserve(config.in.size());
+		std::transform(config.in.begin(), config.in.end(),
+			std::back_inserter(result),
+			[&](auto&& input_path) {
+				return std::make_pair(
+					input_path,
+					(config.out == "" || config.in.size() != 1)
+						? output_path(input_path)
+						: config.out);
+			});
+		return result;
 	}
 
 public:
@@ -70,14 +68,19 @@ public:
 			}
 		} else {
 			fmt::print("Processing ");
-			ranges::copy(config.in, ranges::ostream_joiner(std::cout, ' '));
+			for (auto i = size_t{0}; i < config.in.size(); ++i) {
+				fmt::print("{}", config.in[i].native());
+				if (i + 1 < config.in.size()) {
+					fmt::print(" ");
+				}
+			}
 			fmt::print(" -> {}\n", config.out.string());
-			auto sequences = config.in
-				| rv::transform(
-					[&](auto&& input_path) {
-						return *spam::load_fasta_file(input_path);
-					})
-				| ranges::to<std::vector<spam::sequence>>();
+			auto sequences = std::vector<spam::sequence>{};
+			std::transform(config.in.begin(), config.in.end(),
+				std::back_inserter(sequences),
+				[&](auto&& input_path) {
+					return *spam::load_fasta_file(input_path);
+				});
 			auto file = std::ofstream{config.out};
 			file << process(sequences);
 			file.close();
@@ -97,12 +100,13 @@ private:
 				return std::vector<spam::sequence>{*spam::load_fasta_file(path)};
 			} else {
 				auto assembled_sequences = *spam::load_multi_fasta_file(path);
-				return assembled_sequences
-					| rv::transform(
-						[](auto&& seq) {
-							return spam::sequence{std::move(seq)};
-						})
-					| ranges::to<std::vector<spam::sequence>>();
+				auto sequences = std::vector<spam::sequence>{};
+				std::transform(assembled_sequences.begin(), assembled_sequences.end(),
+					std::back_inserter(sequences),
+					[](auto&& seq) {
+						return spam::sequence{std::move(seq)};
+					});
+				return sequences;
 			}
 		}
 	}
@@ -115,11 +119,9 @@ private:
 			wordlengths.push_back(spam::wordlist::kmin(sequences));
 			wordlengths.push_back(spam::wordlist::kmax(sequences));
 		}
-		size_t kmax = *ranges::max_element(wordlengths);
-		auto pattern = config.pattern;
 		return spam::distance_matrix(
 			std::move(sequences),
-			pattern,
+			config.pattern,
 			wordlengths,
 			threadpool);
 	}

@@ -3,8 +3,6 @@
 #include "pattern.hpp"
 #include "sequence.hpp"
 
-#include <range/v3/view/transform.hpp>
-
 namespace spam {
 
 using word_t = __uint128_t;
@@ -46,17 +44,12 @@ public:
 	{
 		return words.end();
 	}
-
-	auto reduce(size_t k) const
-	{
-		auto reduction_pattern = std::numeric_limits<word_t>::max();
-		reduction_pattern <<= 8 * sizeof(word_t) - 2 * k;
-		return *this
-			| ranges::view::transform(
-				[reduction_pattern = reduction_pattern](auto word) {
-					return word & reduction_pattern;
-				});
-	}
 };
+
+auto calculate_matches(
+    spam::wordlist const& wordlist1,
+    spam::wordlist const& wordlist2,
+    size_t k)
+    -> size_t;
 
 } // namespace spam
