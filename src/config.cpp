@@ -78,7 +78,7 @@ namespace spam {
         args::ValueFlag<std::string> patternflag(parser, "word pattern",
             "The binary word pattern used to create wordlists from sequences. "
             "May only include \'0\' and \'1\' characters.",
-            {'p', "pattern"}, "111111111111111111111111111111111111");
+            {'p', "pattern"}, std::string(spam::wordlist::max_wordsize(), '1'));
         args::ValueFlag<std::string> wordlengths(parser, "word lengths",
             "Comma-separated list of wordlengths to consider when calculating"
             " the distance between two sequences.",

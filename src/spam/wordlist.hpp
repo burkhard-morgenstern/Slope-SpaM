@@ -5,7 +5,7 @@
 
 namespace spam {
 
-using word_t = __uint128_t;
+using word_t = uint64_t;
 
 class wordlist {
 	std::vector<word_t> words;
