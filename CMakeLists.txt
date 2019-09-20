@@ -55,3 +55,23 @@ target_link_libraries(slope-spam-test
 )
 
 add_test(slope-spam-test slope-spam-test)
+
+add_executable(generator
+    src/generator.cpp
+)
+
+add_executable(simulate
+    $<TARGET_OBJECTS:slope-spam-common>
+    src/simulate.cpp
+    src/generator.cpp
+)
+
+target_compile_definitions(simulate
+    PRIVATE -DGENERATOR_NO_MAIN
+)
+
+target_link_libraries(simulate
+    ${CMAKE_THREAD_LIBS_INIT}
+    fmt::fmt
+    stdc++fs
+)
