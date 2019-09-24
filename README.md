@@ -4,7 +4,7 @@
   
 # Installation
 
-The installation requires `cmake` (>= 3.5.1) and a C++17 compliant C++ compiler. Use the following commands to install `Slope-SpaM`:
+The installation requires `cmake` (>= 3.8.2) and a C++17 compliant C++ compiler. Use the following commands to install `Slope-SpaM`:
 
 	git clone --recursive https://github.com/burkhard-morgenstern/Slope-SpaM
 	cd Slope-SpaM
