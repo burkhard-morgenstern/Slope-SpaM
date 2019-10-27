@@ -1,6 +1,12 @@
 # About
 
-`Slope-SpaM` calculates the number of spaced word matches between pairs of sequences. The matches have *k* identical characters as indicated by a binary pattern where '1' denotes a match position. The number of spaced word matches is observed for a range of *k*-values [k<sub>min</sub> ... k<sub>max</sub>] where k<sub>max</sub> is the weight of the pattern passed to `Slope-SpaM`. The distance is calculated from the slope of a function based on these observed numbers of spaced word matches. For more details, check our [paper](https://www.biorxiv.org/content/10.1101/527515v1).
+`Slope-SpaM` estimates phylogenetic distances between two DNA sequences. More precisely, for a set of input sequuences in FASTA format, it estimates all pairwise Jukes-Cantor distances. That is, for each pair of sequences it estimates the average number of substitutions per sequence positions that have occurred since the sequences have evolved from their last common anchestor. The output of the program is a matrix with these pairwise distances in phylip format.
+
+To estimate the phylogenetic distance between two DNA sequences, Slope-SpaM calculates the number of word matches for two different word lengths k_min and k_max. Instead of words, so-called spaced-words may be used, i.e. words containing wildcard characters at certain positions specified by the user. To this end, a binary pattern representing "match positions" ('1') and "don't-care positions" ('0') has to be provided as input to the program.
+
+If spaced words are used, two binary patterns with k_min match positions and k_min match positions are used by shortening the input pattern specified by the user (i.e. by using suitable prefixes of this pattern). 
+
+For more details, check our [paper](https://www.biorxiv.org/content/10.1101/527515v1).
   
 # Installation
 
