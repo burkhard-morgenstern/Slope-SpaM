@@ -98,13 +98,21 @@ auto background_match_probability(
 auto load_directory(fs::path const& path)
     -> std::optional<std::vector<sequence>>
 {
+    static std::vector<std::string> allowed_extensions =
+        {".fasta", ".fa", ".fas", ".fna", ".txt"};
+
     if (!fs::is_directory(path)) {
         return {};
     }
 
 	auto result = std::vector<sequence>{};
     for (auto& entry : fs::directory_iterator(path)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".fasta") {
+        auto const has_allowed_extension =
+            std::find(
+                allowed_extensions.begin(),
+                allowed_extensions.end(),
+                entry.path().extension()) != allowed_extensions.end();
+        if (entry.is_regular_file() && has_allowed_extension) {
             result.push_back(*load_fasta_file(entry));
         }
     }
