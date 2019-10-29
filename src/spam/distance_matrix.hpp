@@ -8,6 +8,24 @@
 
 namespace spam {
 
+class insufficient_pattern_exception
+	: std::exception
+{
+	std::string message;
+
+public:
+	insufficient_pattern_exception(std::string message)
+		: message(std::move(message))
+	{}
+
+	auto what() const noexcept
+		-> const char *
+		override
+	{
+		return message.c_str();
+	}
+};
+
 class distance_matrix {
 	std::vector<spam::sequence> sequences;
 	spam::pattern pattern;
