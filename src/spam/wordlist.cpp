@@ -53,7 +53,7 @@ auto encode_sequence(std::string const& sequence)
     std::transform(sequence.begin(), sequence.end(),
         std::back_inserter(result),
         [](auto&& c) {
-            switch(c) {
+            switch(toupper(c)) {
             case 'A':
                 return 0;
             case 'C':
