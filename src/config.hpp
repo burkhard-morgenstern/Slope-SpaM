@@ -30,6 +30,7 @@ namespace spam {
         spam::pattern pattern;
         bool multi_fasta_as_reads;
         std::vector<size_t> wordlengths;
+        int threads;
 
         static config from_args(int argc, char** argv);
     };

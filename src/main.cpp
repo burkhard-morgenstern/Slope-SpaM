@@ -21,7 +21,7 @@ public:
 	application(spam::config config)
 		: config(std::move(config)),
 		threadpool(std::make_shared<ThreadPool>(
-			std::thread::hardware_concurrency()))
+			config.threads))
 	{}
 
 private:

@@ -174,6 +174,8 @@ namespace spam {
             "Comma-separated list of wordlengths to consider when calculating"
             " the distance between two sequences.",
             {'k', "kmer-lengths"}, "");
+        args::ValueFlag<std::string> max_threads(parser, "max threads",
+                "Maximum number of threads used.", {'t', "threads"}, "1");
         args::Flag as_reads(parser, "multi-fasta as reads",
             "Use sequences from multi-fasta files as reads of one sequence "
             "instead of multiple sequences.",
@@ -192,7 +194,8 @@ namespace spam {
             outfile.Get(),
             parse_pattern(patternflag.Get()),
             as_reads.Get(),
-            parse_wordlengths(wordlengths.Get())};
+            parse_wordlengths(wordlengths.Get()),
+            stoi(max_threads.Get())};
     }
 
 }
