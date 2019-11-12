@@ -1,5 +1,8 @@
 #include "config.hpp"
 
+#include <fstream>
+#include <random>
+
 #include <fmt/format.h>
 
 #include "args.hpp"
@@ -40,10 +43,96 @@ namespace spam {
         return results;
     }
 
+    auto is_pattern(std::string const& str)
+        -> bool
+    {
+        auto regex = std::regex(R"((0|1)*)");
+        return regex_match(str, regex);
+    }
+
+    auto is_probability(std::string const& str)
+        -> bool
+    {
+        auto regex = std::regex(R"(1\.0|0\.[0-9]+)");
+        return regex_match(str, regex);
+    }
+
+    auto create_patternflag_with_coverage(double coverage)
+        -> std::string
+    {
+        auto rd = std::random_device{};
+        auto dist = std::uniform_real_distribution{0.0, 1.0};
+        auto pattern = std::string{};
+        for (auto match_count = size_t{0};
+            match_count < spam::wordlist::max_wordsize();) {
+            if (coverage > dist(rd)) {
+                pattern += '1';
+                ++match_count;
+            } else {
+                pattern += '0';
+            }
+        }
+        return pattern;
+    }
+
+    auto random_pattern_from_flag(std::string const& patternflag)
+        -> std::string
+    {
+        try {
+            auto coverage = std::stod(patternflag);
+            if (coverage < std::numeric_limits<double>::epsilon()) {
+                throw config_exception(fmt::format(
+                    "The given pattern coverage '{}' is not greater "
+                    "than 0!", patternflag));
+            }
+            return create_patternflag_with_coverage(coverage);
+        } catch (std::invalid_argument const&) {
+            throw config_exception(fmt::format(
+                "Conversion of the pattern '{}' to a converage value "
+                "failed unexpectedly!", patternflag));
+        } catch (std::out_of_range const&) {
+            throw config_exception(fmt::format(
+                "Pattern converage '{}' is not representable as a "
+                "floating-point value!", patternflag));
+        }
+    }
+
+    auto load_patternflag_from_file(fs::path const& filepath)
+        -> std::string
+    {
+		auto file = std::ifstream{filepath};
+        if (!file.is_open()) {
+            throw config_exception(fmt::format(
+                "Pattern file '{}' could not be opened!", filepath.native()));
+        }
+
+        std::string line;
+        std::getline(file, line);
+        if (!is_pattern(line)) {
+            throw config_exception(fmt::format(
+                "The first line of the pattern file '{}' is not a valid "
+                "pattern!", filepath.native()));
+        }
+        return line;
+    }
+
+    auto resolve_patternflag_by_type(std::string const& patternflag)
+        -> std::string
+    {
+        if (is_pattern(patternflag)) {
+            return patternflag;
+        }
+        if (is_probability(patternflag)) {
+            return random_pattern_from_flag(patternflag);
+        }
+        return load_patternflag_from_file(patternflag);
+    }
+
     auto parse_pattern(std::string const& patternflag)
         -> spam::pattern
     {
-        auto const pattern = spam::pattern{patternflag};
+        auto const pattern = spam::pattern{
+            resolve_patternflag_by_type(patternflag)};
         if (pattern.weight() > spam::wordlist::max_wordsize()) {
             throw config_exception(fmt::format(
                 "Unsupported pattern weight of {}! "
@@ -70,7 +159,9 @@ namespace spam {
         return result;
     }
 
-    config config::from_args(int argc, char** argv) {
+    auto config::from_args(int argc, char** argv)
+        -> config
+    {
         args::ArgumentParser parser("Slope-SpaM");
         args::ValueFlag<std::string> outfile(parser, "output file",
             "The output file. Ignored if multiple inputs are given.",

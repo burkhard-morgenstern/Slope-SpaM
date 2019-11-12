@@ -21,13 +21,13 @@ add_library(slope-spam-common OBJECT
     src/spam/pattern.cpp
     src/spam/sequence.cpp
     src/spam/wordlist.cpp
+    src/config.cpp
+    src/filesystem.cpp
     src/string.cpp
 )
 
 add_executable(slope-spam
     $<TARGET_OBJECTS:slope-spam-common>
-    src/config.cpp
-    src/filesystem.cpp
     src/main.cpp
 )
 
@@ -39,6 +39,7 @@ target_link_libraries(slope-spam
 
 add_executable(slope-spam-test
     $<TARGET_OBJECTS:slope-spam-common>
+    src/config.test.cpp
     src/main.test.cpp
     src/string.test.cpp
     src/spam/pattern.test.cpp

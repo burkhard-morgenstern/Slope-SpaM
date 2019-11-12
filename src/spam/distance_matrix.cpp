@@ -54,7 +54,14 @@ void distance_matrix::create_wordlists()
 {
     auto max_wordlength = *std::max_element(
         wordlengths.begin(), wordlengths.end());
-    pattern = pattern.reduce(max_wordlength);
+    try {
+        pattern = pattern.reduce(max_wordlength);
+    } catch(std::invalid_argument const& e) {
+        throw insufficient_pattern_exception(
+            fmt::format("The given pattern of weight {} is not sufficient for"
+                " the required maximal wordlength of {}!",
+                pattern.weight(), max_wordlength));
+    }
     if (!threadpool) {
         create_wordlists_seq();
     } else {
