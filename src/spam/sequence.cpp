@@ -48,7 +48,7 @@ auto sequence::adjusted_size(size_t wordlength) const
     -> size_t
 {
     if (std::holds_alternative<assembled_sequence>(*this)) {
-        return size() - wordlength;
+        return size() - wordlength + 1;
     } else {
         auto& seq = std::get<unassembled_sequence>(*this);
         return size() - seq.reads.size() * wordlength;
