@@ -167,9 +167,9 @@ namespace spam {
             "The output file. Ignored if multiple inputs are given.",
             {'o', "output"}, "out.dmat");
         args::ValueFlag<std::string> patternflag(parser, "word pattern",
-            "The binary word pattern used to create wordlists from sequences. "
-            "May only include \'0\' and \'1\' characters.",
-            {'p', "pattern"}, std::string(spam::wordlist::max_wordsize(), '1'));
+             "The binary word pattern used to create wordlists from sequences. "
+             "May only include \'0\' and \'1\' characters.",
+             {'p', "pattern"}, "10001011110010111010111000011001101010000101100100010111011");
         args::ValueFlag<std::string> wordlengths(parser, "word lengths",
             "Comma-separated list of wordlengths to consider when calculating"
             " the distance between two sequences.",
