@@ -165,7 +165,7 @@ namespace spam {
         args::ArgumentParser parser("Slope-SpaM");
         args::ValueFlag<std::string> outfile(parser, "output file",
             "The output file. Ignored if multiple inputs are given.",
-            {'o', "output"}, "");
+            {'o', "output"}, "out.dmat");
         args::ValueFlag<std::string> patternflag(parser, "word pattern",
             "The binary word pattern used to create wordlists from sequences. "
             "May only include \'0\' and \'1\' characters.",
