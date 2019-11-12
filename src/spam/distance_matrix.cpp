@@ -145,7 +145,7 @@ auto calculate_distance(
     auto values = std::vector<std::pair<long double, long double>>{};
     values.reserve(matches.size());
     for (auto& [k, count] : matches) {
-        long double e = pow(q, k) * seq1.adjusted_size(k) * seq2.adjusted_size(k);
+        long double e = pow(q, k) * 2 * seq1.adjusted_size(k) * 2 * seq2.adjusted_size(k);
         values.emplace_back(k, log(count - e));
     }
     auto m = slope(values);

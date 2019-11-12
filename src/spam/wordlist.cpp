@@ -58,9 +58,9 @@ auto encode_sequence(std::string const& sequence)
                 return 0;
             case 'C':
                 return 1;
-            case 'G':
-                return 2;
             case 'T':
+                return 2;
+            case 'G':
                 return 3;
             }
             return -1;
@@ -88,6 +88,30 @@ auto create_word(EncodedIt it, spam::pattern const& pattern)
         : std::numeric_limits<word_t>::max();
 }
 
+template<class EncodedIt>
+auto create_revComp_word(EncodedIt it, spam::pattern const& pattern)
+-> word_t
+{
+    auto revIt = it + pattern.size() - 1;
+
+    auto word = word_t{0};
+    auto successful = true;
+
+    for (auto pos : pattern) {
+        if (revIt[-pos] == -1) {
+            successful = false;
+            break;
+        }
+        word <<= 2;
+        word += (revIt[-pos] + 2) % 4;
+    }
+
+    word <<= 8 * sizeof(word_t) - 2 * pattern.weight();
+    return successful
+           ? word
+           : std::numeric_limits<word_t>::max();
+}
+
 auto create_words(std::string const& sequence, spam::pattern const& pattern)
     -> std::vector<word_t>
 {
@@ -96,12 +120,13 @@ auto create_words(std::string const& sequence, spam::pattern const& pattern)
     }
     auto encoded = encode_sequence(sequence);
     auto words = std::vector<word_t>{};
-    words.reserve(sequence.size() - pattern.size() + 1);
+    words.reserve(2 * (sequence.size() - pattern.size() + 1));
     for (auto it = encoded.begin();
         it != encoded.end() - pattern.size() + 1;
         ++it)
     {
         words.push_back(create_word(it, pattern));
+        words.push_back(create_revComp_word(it, pattern));
     }
     words.erase(std::remove_if(words.begin(), words.end(),
         [](auto const& word) {
