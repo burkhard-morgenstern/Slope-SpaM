@@ -171,9 +171,21 @@ std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
 	os << matrix.size() << std::endl;
 	for (int i = 0; i < matrix.size(); i++) {
         auto const& [sequence, distances] = matrix.column(i);
-		os << sequence.name() << '\t';
+        auto length = sequence.name().length();
+        if (length < 10) {
+            os << sequence.name();
+            for (auto i = length; length < 10; ++length) {
+                os << ' ';
+            }
+        }
+        else if (length > 10) {
+            os << sequence.name().substr(0, 10);
+        }
+        else {
+            os << sequence.name() << ' ';
+        }
 		for (int j = 0; j < matrix.size(); j++){
-			os << distances[j] << '\t';
+			os << distances[j] << ' ';
 		}
 		os << "\n";
 	}
