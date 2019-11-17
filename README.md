@@ -43,7 +43,7 @@ After installing `wsl` (Windows Subsystem for Linux), you can use the same comma
 ## Options
 | Option                        | Description |
 | ---                           | ---         |
-| -o, --output <img width=400/> | The output file. Ignored if multiple inputs are given. <img width=400/> |
+| -o, --output <img width=600/> | The output file. Ignored if multiple inputs are given. <img width=600/> |
 | -p, --pattern                 | The binary word pattern used to create wordlists from sequences. May only include '0' and '1' characters. |
 | -k, --kmer-lengths            | Comma-separated list of wordlengths to consider when calculating the distance between two sequences. |
 | -a, --as-reads                | Comma-separated list of wordlengths to consider when calculating the distance between two sequences. |
