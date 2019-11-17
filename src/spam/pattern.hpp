@@ -10,7 +10,7 @@ class pattern {
 	std::vector<size_t> indices;
 
 public:
-	pattern(std::string bits);
+	explicit pattern(std::string bits);
 
 	auto reduce(size_t k) const
 		-> pattern;

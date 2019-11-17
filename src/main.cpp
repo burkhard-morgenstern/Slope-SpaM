@@ -18,7 +18,7 @@ class application {
 	std::shared_ptr<ThreadPool> threadpool;
 
 public:
-	application(spam::config config)
+	explicit application(spam::config config)
 		: config(std::move(config)),
 		threadpool(std::make_shared<ThreadPool>(
 			config.threads))

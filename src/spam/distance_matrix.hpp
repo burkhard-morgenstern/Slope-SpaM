@@ -14,7 +14,7 @@ class insufficient_pattern_exception
 	std::string message;
 
 public:
-	insufficient_pattern_exception(std::string message)
+	explicit insufficient_pattern_exception(std::string message)
 		: message(std::move(message))
 	{}
 

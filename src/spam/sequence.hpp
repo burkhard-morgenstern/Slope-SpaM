@@ -42,10 +42,10 @@ auto operator>>(std::istream& is, assembled_sequence& seq)
 struct sequence
 	: public std::variant<unassembled_sequence, assembled_sequence>
 {
-	sequence(unassembled_sequence seq)
+	explicit sequence(unassembled_sequence seq)
 		: std::variant<unassembled_sequence, assembled_sequence>{seq}
 	{};
-	sequence(assembled_sequence seq)
+	explicit sequence(assembled_sequence seq)
 		: std::variant<unassembled_sequence, assembled_sequence>{seq}
 	{};
 

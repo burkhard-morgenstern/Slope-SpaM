@@ -12,7 +12,7 @@ namespace spam {
         std::string message;
 
     public:
-        config_exception(std::string message)
+        explicit config_exception(std::string message)
             : message(std::move(message))
         {}
 
