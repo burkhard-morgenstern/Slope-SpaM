@@ -2,7 +2,6 @@
 
 ![GitHub Release Date](https://img.shields.io/github/release-date/burkhard-morgenstern/Slope-SpaM)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ebcd8da0747b48da84693965306a4ac8)](https://www.codacy.com/manual/smortezah/Slope-SpaM?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=burkhard-morgenstern/Slope-SpaM&amp;utm_campaign=Badge_Grade)
-![GitHub issues](https://img.shields.io/github/issues-raw/burkhard-morgenstern/Slope-SpaM)
 ![GitHub repo size](https://img.shields.io/github/repo-size/burkhard-morgenstern/Slope-SpaM)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
