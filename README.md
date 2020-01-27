@@ -1,4 +1,4 @@
-# Slope-SpaM
+# Slope-SpaM  &nbsp;
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ebcd8da0747b48da84693965306a4ac8)](https://www.codacy.com/manual/smortezah/Slope-SpaM?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=burkhard-morgenstern/Slope-SpaM&amp;utm_campaign=Badge_Grade)
 ![GitHub repo size](https://img.shields.io/github/repo-size/burkhard-morgenstern/Slope-SpaM)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
