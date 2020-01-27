@@ -1,7 +1,4 @@
-# Slope-SpaM  &nbsp;
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ebcd8da0747b48da84693965306a4ac8)](https://www.codacy.com/manual/smortezah/Slope-SpaM?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=burkhard-morgenstern/Slope-SpaM&amp;utm_campaign=Badge_Grade)
-![GitHub repo size](https://img.shields.io/github/repo-size/burkhard-morgenstern/Slope-SpaM)
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
+# Slope-SpaM &nbsp;&nbsp;&nbsp;&nbsp; [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ebcd8da0747b48da84693965306a4ac8)](https://www.codacy.com/manual/smortezah/Slope-SpaM?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=burkhard-morgenstern/Slope-SpaM&amp;utm_campaign=Badge_Grade) ![GitHub repo size](https://img.shields.io/github/repo-size/burkhard-morgenstern/Slope-SpaM) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
 `Slope-SpaM` estimates phylogenetic distances between two DNA sequences. More precisely, for a set of input sequuences in FASTA format, it estimates all pairwise Jukes-Cantor distances. That is, for each pair of sequences it estimates the average number of substitutions per sequence positions that have occurred since the sequences have evolved from their last common anchestor. The output of the program is a matrix with these pairwise distances in phylip format.
 
