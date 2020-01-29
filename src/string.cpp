@@ -16,9 +16,7 @@ auto split(std::string const& s, char seperator) -> std::vector<std::string> {
   }
   output.push_back(s.substr(prev_pos, pos - prev_pos));
   output.erase(std::remove_if(output.begin(), output.end(),
-                              [](std::string const& str) {
-                                return str == "";
-                              }),
+                              [](std::string const& str) { return str == ""; }),
                output.end());
   return output;
 }
