@@ -11,7 +11,7 @@ auto wordlist::max_wordsize() -> size_t { return 4 * sizeof(word_t) - 1; }
 
 auto wordlist::kmin(sequence const& seq) -> size_t {
   return std::ceil(std::log(seq.size()) / 0.87);
-//   return std::ceil((std::log(seq.size()) + 0.69) / 0.875); //todo check
+  // return std::ceil((std::log(seq.size()) + 0.69) / 0.875); //todo check
 }
 
 auto wordlist::kmin(std::vector<sequence> const& seqs) -> size_t {
@@ -24,7 +24,7 @@ auto wordlist::kmin(std::vector<sequence> const& seqs) -> size_t {
 
 auto wordlist::kmax(sequence const& seq) -> size_t {
   return std::floor(std::log(seq.size()) / 0.63);
-//   return std::ceil(std::log(seq.size()) / 0.634); //todo check
+  // return std::ceil(std::log(seq.size()) / 0.634); //todo check
 }
 
 auto wordlist::kmax(std::vector<sequence> const& seqs) -> size_t {
