@@ -52,6 +52,10 @@ class distance_matrix {
   auto calculate_element(size_t i, size_t j) const -> std::pair<double, double>;
 };
 
+auto jukes_cantor(double) -> double;
+auto calculate_distance(std::vector<std::pair<size_t, size_t>> const&,
+                        spam::sequence const&, spam::sequence const&)
+    -> std::pair<double, double>;
 std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix);
 
 }  // namespace spam

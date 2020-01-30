@@ -120,6 +120,10 @@ void distance_matrix::calculate_matrix_par() {
   }
 }
 
+auto jukes_cantor(double p) -> double {
+  return -(3.0 / 4.0) * std::log(1.0 - (4.0 / 3.0) * (1.0 - p));
+}
+
 auto calculate_distance(std::vector<std::pair<size_t, size_t>> const& matches,
                         spam::sequence const& seq1, spam::sequence const& seq2)
     -> std::pair<double, double> {
@@ -133,7 +137,8 @@ auto calculate_distance(std::vector<std::pair<size_t, size_t>> const& matches,
   }
   auto m = slope(values);
   auto p = exp(m) / ((1.0 - seq1.error_rate()) * (1.0 - seq2.error_rate()));
-  auto d = -(3.0 / 4.0) * log(1.0 - (4.0 / 3.0) * (1.0 - p));
+  // auto d = -(3.0 / 4.0) * log(1.0 - (4.0 / 3.0) * (1.0 - p));
+  auto d = jukes_cantor(p);
   return {p, d};
 }
 
