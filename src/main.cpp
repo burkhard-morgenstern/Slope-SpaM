@@ -124,12 +124,14 @@ class application {
 };
 
 int main(int argc, char** argv) {
-  try {
-    return application{spam::config::from_args(argc, argv)}.exec();
-  } catch (spam::config_exception const& e) {
-    fmt::print(stderr, "{}", e.what());
-    return 1;
-  } catch (spam::insufficient_pattern_exception const& e) {
-    fmt::print(stderr, "Distance estimation failed:\n\t{}\n", e.what());
-  }
+
+  
+  // try {
+  //   return application{spam::config::from_args(argc, argv)}.exec();
+  // } catch (spam::config_exception const& e) {
+  //   fmt::print(stderr, "{}", e.what());
+  //   return 1;
+  // } catch (spam::insufficient_pattern_exception const& e) {
+  //   fmt::print(stderr, "Distance estimation failed:\n\t{}\n", e.what());
+  // }
 }
