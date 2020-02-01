@@ -37,43 +37,43 @@ target_link_libraries(slope-spam
     stdc++fs
 )
 
-add_executable(slope-spam-test
-    $<TARGET_OBJECTS:slope-spam-common>
-    src/config.test.cpp
-    src/main.test.cpp
-    src/string.test.cpp
-    src/spam/pattern.test.cpp
-    src/spam/wordlist.test.cpp
-)
+# add_executable(slope-spam-test
+#     $<TARGET_OBJECTS:slope-spam-common>
+#     src/config.test.cpp
+#     src/main.test.cpp
+#     src/string.test.cpp
+#     src/spam/pattern.test.cpp
+#     src/spam/wordlist.test.cpp
+# )
 
-target_include_directories(slope-spam-test PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party/catch2/single_include
-)
+# target_include_directories(slope-spam-test PRIVATE
+#     ${CMAKE_SOURCE_DIR}/third_party/catch2/single_include
+# )
 
-target_link_libraries(slope-spam-test
-    ${CMAKE_THREAD_LIBS_INIT}
-    fmt::fmt
-    stdc++fs
-)
+# target_link_libraries(slope-spam-test
+#     ${CMAKE_THREAD_LIBS_INIT}
+#     fmt::fmt
+#     stdc++fs
+# )
 
-add_test(slope-spam-test slope-spam-test)
+# add_test(slope-spam-test slope-spam-test)
 
-add_executable(generator
-    src/generator.cpp
-)
+# add_executable(generator
+#     src/generator.cpp
+# )
 
-add_executable(simulate
-    $<TARGET_OBJECTS:slope-spam-common>
-    src/simulate.cpp
-    src/generator.cpp
-)
+# add_executable(simulate
+#     $<TARGET_OBJECTS:slope-spam-common>
+#     src/simulate.cpp
+#     src/generator.cpp
+# )
 
-target_compile_definitions(simulate
-    PRIVATE -DGENERATOR_NO_MAIN
-)
+# target_compile_definitions(simulate
+#     PRIVATE -DGENERATOR_NO_MAIN
+# )
 
-target_link_libraries(simulate
-    ${CMAKE_THREAD_LIBS_INIT}
-    fmt::fmt
-    stdc++fs
-)
+# target_link_libraries(simulate
+#     ${CMAKE_THREAD_LIBS_INIT}
+#     fmt::fmt
+#     stdc++fs
+# )

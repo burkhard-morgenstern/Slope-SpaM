@@ -30,14 +30,14 @@ colors = [
     'C2'
 ]
 
+# for file, label, color in zip(sys.argv[1:], labels, colors):
 for file in sys.argv[1:]:
-#for file, label, color in zip(sys.argv[1:], labels, colors):
     rows = []
     with open(file, 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
         for row in reader:
             rows.append(row)
-    rows = sorted(rows, key = lambda row: float(row[0]))
+    rows = sorted(rows, key=lambda row: float(row[0]))
     keys = [float(row[0]) for row in rows]
     expected = [float(row[1]) for row in rows]
     values = [list(map(float, row[2:])) for row in rows]
@@ -48,8 +48,8 @@ for file in sys.argv[1:]:
     e = np.array([np.std(l) for l in values])
 
     plt.errorbar(x, y, e, marker='o', capsize=2)
-    #plt.errorbar(x, y, e, marker='o', capsize=2, label=label, color=color)
+    # plt.errorbar(x, y, e, marker='o', capsize=2, label=label, color=color)
 
-#plt.legend(loc='upper left')
+# plt.legend(loc='upper left')
 plt.savefig('20000_length_10000.pdf')
 plt.show()
