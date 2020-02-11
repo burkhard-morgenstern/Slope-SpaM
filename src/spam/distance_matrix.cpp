@@ -185,7 +185,7 @@ std::ostream& operator<<(std::ostream& os, distance_matrix const& matrix)
             os << sequence.name() << ' ';
         }
 		for (int j = 0; j < matrix.size(); j++){
-			os << distances[j] << ' ';
+			os << "  " << distances[j];
 		}
 		os << "\n";
 	}
