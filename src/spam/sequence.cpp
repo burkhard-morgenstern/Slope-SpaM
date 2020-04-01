@@ -10,7 +10,13 @@ namespace spam {
 auto operator>>(std::istream& is, assembled_sequence& seq)
     -> std::istream&
 {
-    std::getline(is, seq.name);
+    std::string name;
+    std::getline(is, name);
+    auto p = std::find_if(name.begin(), name.end(), [](const char c) { return isspace(c); });
+    if (p != name.end()) {
+        name.erase(p, name.end());
+    }
+    seq.name = std::move(name);
     std::string nucleotides;
     std::getline(is, nucleotides, '>');
     nucleotides.erase(std::remove_if(nucleotides.begin(), nucleotides.end(),
